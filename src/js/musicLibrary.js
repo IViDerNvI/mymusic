@@ -181,7 +181,7 @@ class MusicLibrary {
                 return null;
             }
             
-            // 从文件名解析基本信息
+            // 从文件名解析基本信息作为后备
             const parsed = Utils.parseFilename(filename);
             
             // 获取文件统计信息
@@ -197,21 +197,40 @@ class MusicLibrary {
                 }
             }
             
-            // 创建歌曲对象
+            // 读取音乐文件的 ID3 标签和元数据
+            let metadata = null;
+            if (window.electronAPI) {
+                try {
+                    const result = await window.electronAPI.readMusicMetadata(filePath);
+                    if (result.success) {
+                        metadata = result.metadata;
+                    } else {
+                        console.warn('读取元数据失败:', filePath, result.error);
+                    }
+                } catch (error) {
+                    console.error('读取元数据异常:', filePath, error);
+                }
+            }
+            
+            // 创建歌曲对象，优先使用元数据，其次使用文件名解析，最后使用默认值
             const song = {
                 id: Utils.generateId(),
                 path: filePath,
-                title: parsed.title || filename.replace(/\.[^/.]+$/, ''),
-                artist: parsed.artist || '未知艺术家',
-                album: '未知专辑',
-                albumArtist: parsed.artist || '未知艺术家',
-                year: null,
-                genre: '未知',
-                track: null,
-                disc: null,
-                duration: 0,
-                bitrate: null,
-                sampleRate: null,
+                title: metadata?.title || parsed.title || filename.replace(/\.[^/.]+$/, ''),
+                artist: metadata?.artist || parsed.artist || '未知艺术家',
+                album: metadata?.album || '未知专辑',
+                albumArtist: metadata?.albumartist || metadata?.artist || parsed.artist || '未知艺术家',
+                year: metadata?.year || null,
+                genre: metadata?.genre || '未知',
+                track: metadata?.track || null,
+                trackTotal: metadata?.trackTotal || null,
+                disc: metadata?.disc || null,
+                discTotal: metadata?.discTotal || null,
+                duration: metadata?.duration || 0,
+                bitrate: metadata?.bitrate || null,
+                sampleRate: metadata?.sampleRate || null,
+                codec: metadata?.codec || null,
+                container: metadata?.container || null,
                 fileSize: fileStats.size,
                 format: extension.toUpperCase(),
                 dateAdded: Date.now(),
@@ -219,8 +238,11 @@ class MusicLibrary {
                 playCount: 0,
                 lastPlayed: null,
                 rating: 0,
-                lyrics: null,
-                albumArt: null
+                lyrics: metadata?.lyrics || null,
+                albumArt: metadata?.albumArt?.data || null,
+                albumArtFormat: metadata?.albumArt?.format || null,
+                comment: metadata?.comment || null,
+                composer: metadata?.composer || null
             };
             
             return song;
@@ -260,12 +282,17 @@ class MusicLibrary {
                     year: song.year,
                     songs: [],
                     totalDuration: 0,
-                    albumArt: song.albumArt
+                    albumArt: song.albumArt // 使用第一首歌的封面
                 });
             }
             const album = this.albums.get(albumKey);
             album.songs.push(song);
             album.totalDuration += song.duration || 0;
+            
+            // 如果当前专辑没有封面但这首歌有封面，则使用这首歌的封面
+            if (!album.albumArt && song.albumArt) {
+                album.albumArt = song.albumArt;
+            }
             
             // 流派统计
             if (!this.genres.has(song.genre)) {
@@ -317,10 +344,7 @@ class MusicLibrary {
             <div class="music-item" data-path="${song.path}" data-index="${index}">
                 <div class="music-item-index">${index + 1}</div>
                 <div class="music-item-album-art">
-                    ${song.albumArt ? 
-                        `<img src="${song.albumArt}" alt="专辑封面">` :
-                        `<div class="album-art-placeholder">${Utils.createAlbumArtPlaceholder(song.title)}</div>`
-                    }
+                    ${Utils.createAlbumArtHTML(song)}
                 </div>
                 <div class="music-item-info">
                     <div class="music-item-title">${song.title}</div>

@@ -111,6 +111,20 @@ function createAlbumArtPlaceholder(title) {
     return title.charAt(0).toUpperCase();
 }
 
+// 创建安全的专辑封面 HTML
+function createAlbumArtHTML(song, size = 'medium') {
+    if (song.albumArt) {
+        return `<img src="${song.albumArt}" alt="${song.album}" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="album-art-placeholder" style="display: none;">
+                    ${createAlbumArtPlaceholder(song.title || song.album)}
+                </div>`;
+    } else {
+        return `<div class="album-art-placeholder">
+                    ${createAlbumArtPlaceholder(song.title || song.album)}
+                </div>`;
+    }
+}
+
 // 获取音乐流派的图标
 function getGenreIcon(genre) {
     const icons = {
@@ -346,6 +360,7 @@ window.Utils = {
     getFileName,
     parseFilename,
     createAlbumArtPlaceholder,
+    createAlbumArtHTML,
     getGenreIcon,
     showNotification,
     createLoadingElement,
