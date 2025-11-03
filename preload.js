@@ -7,6 +7,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
   readMusicFilesFromFolder: (folderPath) => ipcRenderer.invoke('read-music-files-from-folder', folderPath),
   getFileStats: (filePath) => ipcRenderer.invoke('get-file-stats', filePath),
   
+  // 歌词搜索功能
+  searchSongId: (songName, artistName) => ipcRenderer.invoke('search-song-id', songName, artistName),
+  fetchLyrics: (songId) => ipcRenderer.invoke('fetch-lyrics', songId),
+  autoSearchLyrics: (songName, artistName) => ipcRenderer.invoke('auto-search-lyrics', songName, artistName),
+  
   // 菜单事件监听
   onMenuImportFiles: (callback) => ipcRenderer.on('menu-import-files', callback),
   onMenuImportFolder: (callback) => ipcRenderer.on('menu-import-folder', callback),

@@ -1,0 +1,1 @@
+curl https://music.163.com/api/search/get/web\?csrf_token\=hlpretag\=\&hlposttag\=\&s\=FullMoonFullLife\&type\=1\&offset\=0\&total\=true\&limit\=10
