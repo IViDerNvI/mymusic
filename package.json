@@ -1,0 +1,22 @@
+{
+  "name": "mymusic",
+  "version": "1.0.0",
+  "description": "本地音乐播放器 - Electron应用",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["music", "player", "electron", "audio"],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "electron": "^39.0.0"
+  },
+  "dependencies": {
+    "music-metadata": "^10.0.0",
+    "node-id3": "^0.2.6"
+  }
+}

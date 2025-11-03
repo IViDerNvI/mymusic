@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; media-src 'self' file: data:;">
+    <title>MyMusic - 本地音乐播放器</title>
+    <link rel="stylesheet" href="src/css/main.css">
+    <link rel="stylesheet" href="src/css/components.css">
+    <link rel="stylesheet" href="src/css/themes.css">
+</head>
+<body class="theme-dark">
+    <!-- 应用容器 -->
+    <div id="app">
+        <!-- 侧边栏 -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h1 class="app-title">🎵 MyMusic</h1>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <div class="nav-section">
+                    <h3>音乐库</h3>
+                    <ul>
+                        <li><a href="#" data-view="library" class="nav-link active">🎵 所有歌曲</a></li>
+                        <li><a href="#" data-view="artists" class="nav-link">👤 艺术家</a></li>
+                        <li><a href="#" data-view="albums" class="nav-link">💿 专辑</a></li>
+                        <li><a href="#" data-view="genres" class="nav-link">🎭 流派</a></li>
+                        <li><a href="#" data-view="favorites" class="nav-link">❤️ 我的收藏</a></li>
+                    </ul>
+                </div>
+                
+                <div class="nav-section">
+                    <h3>播放列表</h3>
+                    <ul id="playlist-nav">
+                        <li><a href="#" id="create-playlist" class="nav-link">➕ 创建播放列表</a></li>
+                    </ul>
+                </div>
+            </nav>
+        </div>
+
+        <!-- 主内容区 -->
+        <div class="main-content">
+            <!-- 顶部搜索栏 -->
+            <header class="top-bar">
+                <div class="search-container">
+                    <input type="text" id="search-input" placeholder="搜索歌曲、艺术家、专辑..." class="search-input">
+                    <button class="search-btn">🔍</button>
+                </div>
+                
+                <div class="top-controls">
+                    <button id="import-files" class="btn btn-secondary">导入文件</button>
+                    <button id="import-folder" class="btn btn-secondary">导入文件夹</button>
+                    <button id="settings-btn" class="btn btn-icon">⚙️</button>
+                </div>
+            </header>
+
+            <!-- 内容视图 -->
+            <div class="content-view">
+                <!-- 音乐库视图 -->
+                <div id="library-view" class="view active">
+                    <div class="view-header">
+                        <h2>音乐库</h2>
+                        <div class="view-controls">
+                            <select id="sort-select">
+                                <option value="title">按标题排序</option>
+                                <option value="artist">按艺术家排序</option>
+                                <option value="album">按专辑排序</option>
+                                <option value="duration">按时长排序</option>
+                                <option value="dateAdded">按添加时间排序</option>
+                            </select>
+                            <button id="view-toggle" class="btn btn-icon">📋</button>
+                        </div>
+                    </div>
+                    
+                    <div class="music-list" id="music-list">
+                        <div class="empty-state">
+                            <div class="empty-icon">🎵</div>
+                            <h3>音乐库为空</h3>
+                            <p>点击"导入文件"或"导入文件夹"来添加音乐</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 艺术家视图 -->
+                <div id="artists-view" class="view">
+                    <h2>艺术家</h2>
+                    <div class="artists-grid" id="artists-grid"></div>
+                </div>
+
+                <!-- 专辑视图 -->
+                <div id="albums-view" class="view">
+                    <h2>专辑</h2>
+                    <div class="albums-grid" id="albums-grid"></div>
+                </div>
+
+                <!-- 流派视图 -->
+                <div id="genres-view" class="view">
+                    <h2>音乐流派</h2>
+                    <div class="genres-grid" id="genres-grid"></div>
+                </div>
+
+                <!-- 收藏视图 -->
+                <div id="favorites-view" class="view">
+                    <h2>我的收藏</h2>
+                    <div class="music-list" id="favorites-list"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 播放器控制栏 -->
+    <div class="player-bar">
+        <div class="player-info">
+            <div class="album-art">
+                <img id="current-album-art" src="" alt="专辑封面">
+            </div>
+            <div class="song-info">
+                <div class="song-title" id="current-title">选择一首歌曲开始播放</div>
+                <div class="song-artist" id="current-artist">-</div>
+            </div>
+            <button id="favorite-btn" class="btn btn-icon">🤍</button>
+        </div>
+
+        <div class="player-controls">
+            <div class="control-buttons">
+                <button id="shuffle-btn" class="btn btn-icon">🔀</button>
+                <button id="prev-btn" class="btn btn-icon">⏮️</button>
+                <button id="play-btn" class="btn btn-icon btn-play">▶️</button>
+                <button id="next-btn" class="btn btn-icon">⏭️</button>
+                <button id="repeat-btn" class="btn btn-icon">🔁</button>
+            </div>
+            
+            <div class="progress-container">
+                <span class="time current-time">0:00</span>
+                <div class="progress-bar">
+                    <div class="progress-track">
+                        <div class="progress-fill" id="progress-fill"></div>
+                        <div class="progress-handle" id="progress-handle"></div>
+                    </div>
+                </div>
+                <span class="time total-time">0:00</span>
+            </div>
+        </div>
+
+        <div class="player-extras">
+            <button id="lyrics-btn" class="btn btn-icon">📝</button>
+            <button id="equalizer-btn" class="btn btn-icon">🎛️</button>
+            <div class="volume-control">
+                <button id="volume-btn" class="btn btn-icon">🔊</button>
+                <div class="volume-slider">
+                    <input type="range" id="volume-range" min="0" max="100" value="50">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 歌词面板 -->
+    <div id="lyrics-panel" class="lyrics-panel">
+        <div class="lyrics-header">
+            <h3>歌词</h3>
+            <button id="close-lyrics" class="btn btn-icon">✖️</button>
+        </div>
+        <div class="lyrics-content" id="lyrics-content">
+            <div class="no-lyrics">暂无歌词</div>
+        </div>
+    </div>
+
+    <!-- 均衡器面板 -->
+    <div id="equalizer-panel" class="equalizer-panel">
+        <div class="equalizer-header">
+            <h3>音效设置</h3>
+            <button id="close-equalizer" class="btn btn-icon">✖️</button>
+        </div>
+        <div class="equalizer-content">
+            <div class="preset-buttons">
+                <button class="eq-preset active" data-preset="normal">普通</button>
+                <button class="eq-preset" data-preset="pop">流行</button>
+                <button class="eq-preset" data-preset="rock">摇滚</button>
+                <button class="eq-preset" data-preset="jazz">爵士</button>
+                <button class="eq-preset" data-preset="classical">古典</button>
+                <button class="eq-preset" data-preset="electronic">电子</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 设置面板 -->
+    <div id="settings-panel" class="settings-panel">
+        <div class="settings-header">
+            <h3>设置</h3>
+            <button id="close-settings" class="btn btn-icon">✖️</button>
+        </div>
+        <div class="settings-content">
+            <div class="setting-group">
+                <h4>外观</h4>
+                <div class="setting-item">
+                    <label>主题</label>
+                    <select id="theme-select">
+                        <option value="dark">深色</option>
+                        <option value="light">浅色</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="setting-group">
+                <h4>播放</h4>
+                <div class="setting-item">
+                    <label>
+                        <input type="checkbox" id="auto-play-next" checked>
+                        自动播放下一首
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <label>
+                        <input type="checkbox" id="crossfade" checked>
+                        淡入淡出效果
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 上下文菜单 -->
+    <div id="context-menu" class="context-menu">
+        <ul>
+            <li data-action="play">播放</li>
+            <li data-action="add-to-queue">添加到队列</li>
+            <li data-action="add-to-playlist">添加到播放列表</li>
+            <li data-action="favorite">收藏</li>
+            <li data-action="remove">删除</li>
+        </ul>
+    </div>
+
+    <!-- 音频元素 -->
+    <audio id="audio-player" preload="metadata"></audio>
+
+    <!-- JavaScript -->
+    <script src="src/js/utils.js"></script>
+    <script src="src/js/storage.js"></script>
+    <script src="src/js/musicLibrary.js"></script>
+    <script src="src/js/player.js"></script>
+    <script src="src/js/playlist.js"></script>
+    <script src="src/js/ui.js"></script>
+    <script src="src/js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,487 @@
+/* 组件样式 */
+
+/* 播放器控制栏 */
+.player-bar {
+    height: 80px;
+    background: var(--bg-secondary);
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+}
+
+.player-info {
+    display: flex;
+    align-items: center;
+    width: 250px;
+    min-width: 250px;
+}
+
+.album-art {
+    width: 50px;
+    height: 50px;
+    border-radius: 6px;
+    background: var(--bg-tertiary);
+    margin-right: 15px;
+    overflow: hidden;
+}
+
+.album-art img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.song-info {
+    flex: 1;
+    min-width: 0;
+    margin-right: 15px;
+}
+
+.song-title {
+    font-weight: 600;
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.song-artist {
+    color: var(--text-secondary);
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* 播放器控制 */
+.player-controls {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 600px;
+}
+
+.control-buttons {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 10px;
+}
+
+.btn-play {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: var(--accent-color);
+    color: white;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-play:hover {
+    background: var(--accent-hover);
+    transform: scale(1.05);
+}
+
+.control-buttons .btn-icon {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.control-buttons .btn-icon.active {
+    background: var(--accent-color);
+    color: white;
+}
+
+/* 进度条 */
+.progress-container {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    gap: 15px;
+}
+
+.time {
+    font-size: 12px;
+    color: var(--text-secondary);
+    width: 40px;
+    text-align: center;
+}
+
+.progress-bar {
+    flex: 1;
+    height: 6px;
+    background: var(--bg-tertiary);
+    border-radius: 3px;
+    position: relative;
+    cursor: pointer;
+}
+
+.progress-track {
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.progress-fill {
+    height: 100%;
+    background: var(--accent-color);
+    border-radius: 3px;
+    transition: width 0.1s ease;
+    width: 0%;
+}
+
+.progress-handle {
+    width: 12px;
+    height: 12px;
+    background: var(--accent-color);
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    left: 0%;
+}
+
+.progress-bar:hover .progress-handle {
+    opacity: 1;
+}
+
+/* 播放器附加功能 */
+.player-extras {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    width: 250px;
+    justify-content: flex-end;
+}
+
+.volume-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.volume-slider {
+    width: 100px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.volume-control:hover .volume-slider {
+    opacity: 1;
+}
+
+.volume-slider input[type="range"] {
+    width: 100%;
+    height: 4px;
+    background: var(--bg-tertiary);
+    border-radius: 2px;
+    outline: none;
+    -webkit-appearance: none;
+}
+
+.volume-slider input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    background: var(--accent-color);
+    border-radius: 50%;
+    cursor: pointer;
+}
+
+.volume-slider input[type="range"]::-moz-range-thumb {
+    width: 12px;
+    height: 12px;
+    background: var(--accent-color);
+    border-radius: 50%;
+    cursor: pointer;
+    border: none;
+}
+
+/* 侧面板 */
+.lyrics-panel,
+.equalizer-panel,
+.settings-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 350px;
+    height: calc(100vh - 80px);
+    background: var(--bg-secondary);
+    border-left: 1px solid var(--border-color);
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+}
+
+.lyrics-panel.active,
+.equalizer-panel.active,
+.settings-panel.active {
+    transform: translateX(0);
+}
+
+.lyrics-header,
+.equalizer-header,
+.settings-header {
+    padding: 20px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.lyrics-content,
+.equalizer-content,
+.settings-content {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+}
+
+/* 歌词显示 */
+.lyrics-content {
+    line-height: 1.8;
+    font-size: 16px;
+}
+
+.lyrics-line {
+    padding: 8px 0;
+    transition: color 0.3s ease;
+    cursor: pointer;
+}
+
+.lyrics-line.active {
+    color: var(--accent-color);
+    font-weight: 600;
+}
+
+.lyrics-line:hover {
+    color: var(--text-primary);
+}
+
+.no-lyrics {
+    text-align: center;
+    color: var(--text-secondary);
+    font-style: italic;
+    margin-top: 50px;
+}
+
+/* 均衡器 */
+.preset-buttons {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-bottom: 30px;
+}
+
+.eq-preset {
+    padding: 12px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 14px;
+}
+
+.eq-preset:hover {
+    background: var(--bg-hover);
+}
+
+.eq-preset.active {
+    background: var(--accent-color);
+    color: white;
+    border-color: var(--accent-color);
+}
+
+/* 设置面板 */
+.setting-group {
+    margin-bottom: 30px;
+}
+
+.setting-group h4 {
+    margin-bottom: 15px;
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.setting-item {
+    margin-bottom: 15px;
+}
+
+.setting-item label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.setting-item input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+}
+
+.setting-item select {
+    padding: 8px 12px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 14px;
+    outline: none;
+    width: 150px;
+}
+
+/* 上下文菜单 */
+.context-menu {
+    position: fixed;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+    z-index: 1000;
+    opacity: 0;
+    transform: scale(0.95);
+    transition: all 0.2s ease;
+    pointer-events: none;
+}
+
+.context-menu.active {
+    opacity: 1;
+    transform: scale(1);
+    pointer-events: all;
+}
+
+.context-menu ul {
+    list-style: none;
+    padding: 8px 0;
+}
+
+.context-menu li {
+    padding: 12px 20px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: background 0.2s ease;
+}
+
+.context-menu li:hover {
+    background: var(--bg-hover);
+}
+
+.context-menu li:active {
+    background: var(--accent-color);
+    color: white;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 60px;
+    }
+    
+    .sidebar-nav .nav-section h3,
+    .song-info,
+    .music-item-album {
+        display: none;
+    }
+    
+    .nav-link {
+        text-align: center;
+        padding: 15px 10px;
+    }
+    
+    .player-info,
+    .player-extras {
+        width: auto;
+        min-width: auto;
+    }
+    
+    .search-container {
+        width: 250px;
+    }
+    
+    .top-controls {
+        gap: 5px;
+    }
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-secondary);
+}
+
+/* 选择文本样式 */
+::selection {
+    background: var(--accent-color-alpha);
+}
+
+/* 焦点样式 */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+    outline: 2px solid var(--accent-color);
+    outline-offset: 2px;
+}
+
+/* 过渡动画 */
+.fade-in {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.slide-in {
+    animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(-20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}

@@ -1,0 +1,311 @@
+/* 主题样式 */
+
+/* 深色主题 */
+.theme-dark {
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #2a2a2a;
+    --bg-tertiary: #3a3a3a;
+    --bg-hover: #404040;
+    --text-primary: #ffffff;
+    --text-secondary: #b3b3b3;
+    --border-color: #404040;
+    --accent-color: #1db954;
+    --accent-hover: #1ed760;
+    --accent-color-alpha: rgba(29, 185, 84, 0.15);
+    --shadow-color: rgba(0, 0, 0, 0.5);
+}
+
+/* 浅色主题 */
+.theme-light {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fa;
+    --bg-tertiary: #e9ecef;
+    --bg-hover: #dee2e6;
+    --text-primary: #212529;
+    --text-secondary: #6c757d;
+    --border-color: #dee2e6;
+    --accent-color: #0d6efd;
+    --accent-hover: #0b5ed7;
+    --accent-color-alpha: rgba(13, 110, 253, 0.15);
+    --shadow-color: rgba(0, 0, 0, 0.1);
+}
+
+/* 主题切换动画 */
+* {
+    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* 深色主题特殊样式 */
+.theme-dark .music-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.theme-dark .grid-item:hover {
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
+}
+
+.theme-dark input[type="range"]::-webkit-slider-track {
+    background: #404040;
+}
+
+.theme-dark input[type="range"]::-moz-range-track {
+    background: #404040;
+}
+
+/* 浅色主题特殊样式 */
+.theme-light .music-item:hover {
+    background: rgba(0, 0, 0, 0.03);
+}
+
+.theme-light .grid-item:hover {
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+}
+
+.theme-light .context-menu {
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.theme-light input[type="range"]::-webkit-slider-track {
+    background: #dee2e6;
+}
+
+.theme-light input[type="range"]::-moz-range-track {
+    background: #dee2e6;
+}
+
+/* 自定义皮肤选项 */
+.theme-purple {
+    --accent-color: #8b5cf6;
+    --accent-hover: #7c3aed;
+    --accent-color-alpha: rgba(139, 92, 246, 0.15);
+}
+
+.theme-red {
+    --accent-color: #ef4444;
+    --accent-hover: #dc2626;
+    --accent-color-alpha: rgba(239, 68, 68, 0.15);
+}
+
+.theme-orange {
+    --accent-color: #f97316;
+    --accent-hover: #ea580c;
+    --accent-color-alpha: rgba(249, 115, 22, 0.15);
+}
+
+.theme-pink {
+    --accent-color: #ec4899;
+    --accent-hover: #db2777;
+    --accent-color-alpha: rgba(236, 72, 153, 0.15);
+}
+
+.theme-cyan {
+    --accent-color: #06b6d4;
+    --accent-hover: #0891b2;
+    --accent-color-alpha: rgba(6, 182, 212, 0.15);
+}
+
+/* 专辑封面占位符颜色 */
+.album-art-placeholder {
+    background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+/* 波形动画效果 */
+.playing-indicator {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.wave-bar {
+    width: 3px;
+    background: var(--accent-color);
+    border-radius: 2px;
+    animation: wave 1.2s ease-in-out infinite;
+}
+
+.wave-bar:nth-child(1) {
+    height: 12px;
+    animation-delay: 0.1s;
+}
+
+.wave-bar:nth-child(2) {
+    height: 20px;
+    animation-delay: 0.2s;
+}
+
+.wave-bar:nth-child(3) {
+    height: 16px;
+    animation-delay: 0.3s;
+}
+
+.wave-bar:nth-child(4) {
+    height: 8px;
+    animation-delay: 0.4s;
+}
+
+@keyframes wave {
+    0%, 100% {
+        transform: scaleY(0.3);
+    }
+    50% {
+        transform: scaleY(1);
+    }
+}
+
+/* 加载动画 */
+.loading-spinner {
+    width: 20px;
+    height: 20px;
+    border: 2px solid var(--border-color);
+    border-top: 2px solid var(--accent-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* 脉冲效果 */
+.pulse {
+    animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+/* 高亮效果 */
+.highlight {
+    background: var(--accent-color-alpha);
+    border-radius: 4px;
+    padding: 2px 4px;
+}
+
+/* 工具提示 */
+.tooltip {
+    position: relative;
+}
+
+.tooltip::before {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+    border: 1px solid var(--border-color);
+    z-index: 1000;
+}
+
+.tooltip:hover::before {
+    opacity: 1;
+}
+
+/* 徽章 */
+.badge {
+    display: inline-block;
+    padding: 2px 8px;
+    background: var(--accent-color);
+    color: white;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+}
+
+/* 分隔线 */
+.divider {
+    height: 1px;
+    background: var(--border-color);
+    margin: 20px 0;
+}
+
+/* 卡片样式 */
+.card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.card-title {
+    font-weight: 600;
+    margin: 0;
+}
+
+/* 通知样式 */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 15px 20px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    z-index: 2000;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+}
+
+.notification.show {
+    transform: translateX(0);
+}
+
+.notification.success {
+    border-left: 4px solid #10b981;
+}
+
+.notification.error {
+    border-left: 4px solid #ef4444;
+}
+
+.notification.warning {
+    border-left: 4px solid #f59e0b;
+}
+
+.notification.info {
+    border-left: 4px solid #3b82f6;
+}
