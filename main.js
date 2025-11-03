@@ -359,6 +359,13 @@ ipcMain.handle('auto-search-lyrics', async (event, songName, artistName = '') =>
     }
   } catch (error) {
     console.error('自动搜索歌词失败:', error)
+    return {
+      success: false,
+      error: error.message
+    }
+  }
+})
+
 // 读取音乐文件元数据
 ipcMain.handle('read-music-metadata', async (event, filePath) => {
   try {
