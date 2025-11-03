@@ -3,6 +3,8 @@ const path = require('path')
 const fs = require('fs')
 const https = require('https')
 const http = require('http')
+const mm = require('music-metadata')
+const NodeID3 = require('node-id3')
 
 let mainWindow
 
@@ -357,6 +359,53 @@ ipcMain.handle('auto-search-lyrics', async (event, songName, artistName = '') =>
     }
   } catch (error) {
     console.error('自动搜索歌词失败:', error)
+// 读取音乐文件元数据
+ipcMain.handle('read-music-metadata', async (event, filePath) => {
+  try {
+    // 使用 music-metadata 库读取元数据
+    const metadata = await mm.parseFile(filePath)
+    
+    // 提取封面图片
+    let albumArt = null
+    if (metadata.common.picture && metadata.common.picture.length > 0) {
+      const picture = metadata.common.picture[0]
+      // 将图片数据转换为 base64
+      albumArt = {
+        format: picture.format,
+        data: `data:${picture.format};base64,${picture.data.toString('base64')}`
+      }
+    }
+    
+    // 格式化持续时间（秒）
+    const duration = metadata.format.duration || 0
+    
+    // 返回解析后的元数据
+    return {
+      success: true,
+      metadata: {
+        title: metadata.common.title || null,
+        artist: metadata.common.artist || null,
+        album: metadata.common.album || null,
+        albumartist: metadata.common.albumartist || metadata.common.artist || null,
+        year: metadata.common.year || null,
+        genre: (metadata.common.genre && metadata.common.genre.length > 0) ? metadata.common.genre[0] : null,
+        track: metadata.common.track ? metadata.common.track.no : null,
+        trackTotal: metadata.common.track ? metadata.common.track.of : null,
+        disc: metadata.common.disk ? metadata.common.disk.no : null,
+        discTotal: metadata.common.disk ? metadata.common.disk.of : null,
+        duration: Math.round(duration),
+        bitrate: metadata.format.bitrate || null,
+        sampleRate: metadata.format.sampleRate || null,
+        codec: metadata.format.codec || null,
+        container: metadata.format.container || null,
+        albumArt: albumArt,
+        comment: metadata.common.comment ? metadata.common.comment[0] : null,
+        composer: metadata.common.composer ? metadata.common.composer[0] : null,
+        lyrics: metadata.common.lyrics ? metadata.common.lyrics[0] : null
+      }
+    }
+  } catch (error) {
+    console.error('读取音乐元数据失败:', filePath, error)
     return {
       success: false,
       error: error.message
