@@ -52,6 +52,13 @@ class MyMusicApp {
             'keyboardShortcuts'
         ];
         
+        // 初始化歌词管理器
+        if (window.LyricsManager) {
+            this.modules.lyricsManager = new LyricsManager();
+            window.lyricsManager = this.modules.lyricsManager;
+            console.log('歌词管理器初始化完成');
+        }
+        
         for (const moduleName of requiredModules) {
             if (!window[moduleName]) {
                 throw new Error(`必需的模块 ${moduleName} 未找到`);

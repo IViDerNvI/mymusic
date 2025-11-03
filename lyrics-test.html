@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>歌词搜索测试</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        .btn {
+            background: #007AFF;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin: 5px;
+            font-size: 14px;
+        }
+        .btn:hover {
+            background: #0056CC;
+        }
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .results {
+            margin-top: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 6px;
+            border: 1px solid #eee;
+        }
+        .error {
+            color: #FF3B30;
+            background: #FFE5E5;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        .success {
+            color: #34C759;
+            background: #E5F7E5;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        .info {
+            color: #007AFF;
+            background: #E5F2FF;
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+        .lyrics-display {
+            max-height: 400px;
+            overflow-y: auto;
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: monospace;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+        .song-info {
+            background: #f0f8ff;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+        }
+        .song-info h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        .song-info div {
+            margin: 5px 0;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 歌词搜索功能测试</h1>
+        
+        <div class="test-section">
+            <h3>1. 搜索歌曲ID</h3>
+            <div class="input-group">
+                <label>歌曲名称:</label>
+                <input type="text" id="search-song-name" placeholder="例如: 普通朋友" value="普通朋友">
+            </div>
+            <div class="input-group">
+                <label>艺术家 (可选):</label>
+                <input type="text" id="search-artist" placeholder="例如: 陶喆" value="陶喆">
+            </div>
+            <button class="btn" onclick="testSearchSong()">搜索歌曲</button>
+            <div id="search-results"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>2. 获取歌词</h3>
+            <div class="input-group">
+                <label>歌曲ID:</label>
+                <input type="text" id="lyrics-song-id" placeholder="从上面搜索获得的ID" value="150623">
+            </div>
+            <button class="btn" onclick="testFetchLyrics()">获取歌词</button>
+            <div id="lyrics-results"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>3. 自动搜索歌词 (组合功能)</h3>
+            <div class="input-group">
+                <label>歌曲名称:</label>
+                <input type="text" id="auto-song-name" placeholder="例如: 普通朋友" value="普通朋友">
+            </div>
+            <div class="input-group">
+                <label>艺术家 (可选):</label>
+                <input type="text" id="auto-artist" placeholder="例如: 陶喆" value="陶喆">
+            </div>
+            <button class="btn" onclick="testAutoSearch()">自动搜索歌词</button>
+            <div id="auto-results"></div>
+        </div>
+    </div>
+
+    <script>
+        async function testSearchSong() {
+            const songName = document.getElementById('search-song-name').value;
+            const artist = document.getElementById('search-artist').value;
+            const resultsDiv = document.getElementById('search-results');
+            
+            if (!songName) {
+                showError(resultsDiv, '请输入歌曲名称');
+                return;
+            }
+            
+            try {
+                showInfo(resultsDiv, '正在搜索歌曲...');
+                
+                if (!window.electronAPI) {
+                    showError(resultsDiv, '需要在 Electron 环境中运行');
+                    return;
+                }
+                
+                const result = await window.electronAPI.searchSongId(songName, artist);
+                
+                if (result.success) {
+                    let output = '<div class="success">搜索成功!</div>';
+                    output += '<div class="song-info">';
+                    output += `<h4>找到歌曲:</h4>`;
+                    output += `<div><strong>ID:</strong> ${result.songId}</div>`;
+                    output += `<div><strong>名称:</strong> ${result.songName}</div>`;
+                    output += `<div><strong>艺术家:</strong> ${result.artistName}</div>`;
+                    output += `<div><strong>专辑:</strong> ${result.albumName}</div>`;
+                    output += `<div><strong>时长:</strong> ${Math.floor(result.duration / 1000 / 60)}:${String(Math.floor(result.duration / 1000 % 60)).padStart(2, '0')}</div>`;
+                    output += '</div>';
+                    
+                    // 自动填充到歌词搜索框
+                    document.getElementById('lyrics-song-id').value = result.songId;
+                    
+                    resultsDiv.innerHTML = output;
+                } else {
+                    showError(resultsDiv, `搜索失败: ${result.error}`);
+                }
+            } catch (error) {
+                showError(resultsDiv, `搜索出错: ${error.message}`);
+            }
+        }
+        
+        async function testFetchLyrics() {
+            const songId = document.getElementById('lyrics-song-id').value;
+            const resultsDiv = document.getElementById('lyrics-results');
+            
+            if (!songId) {
+                showError(resultsDiv, '请输入歌曲ID');
+                return;
+            }
+            
+            try {
+                showInfo(resultsDiv, '正在获取歌词...');
+                
+                if (!window.electronAPI) {
+                    showError(resultsDiv, '需要在 Electron 环境中运行');
+                    return;
+                }
+                
+                const result = await window.electronAPI.fetchLyrics(songId);
+                
+                if (result.success) {
+                    let output = '<div class="success">歌词获取成功!</div>';
+                    
+                    if (result.lyrics) {
+                        output += '<h4>歌词内容:</h4>';
+                        output += `<div class="lyrics-display">${result.lyrics}</div>`;
+                    }
+                    
+                    if (result.translatedLyrics) {
+                        output += '<h4>翻译歌词:</h4>';
+                        output += `<div class="lyrics-display">${result.translatedLyrics}</div>`;
+                    }
+                    
+                    resultsDiv.innerHTML = output;
+                } else {
+                    showError(resultsDiv, `获取歌词失败: ${result.error}`);
+                }
+            } catch (error) {
+                showError(resultsDiv, `获取出错: ${error.message}`);
+            }
+        }
+        
+        async function testAutoSearch() {
+            const songName = document.getElementById('auto-song-name').value;
+            const artist = document.getElementById('auto-artist').value;
+            const resultsDiv = document.getElementById('auto-results');
+            
+            if (!songName) {
+                showError(resultsDiv, '请输入歌曲名称');
+                return;
+            }
+            
+            try {
+                showInfo(resultsDiv, '正在自动搜索歌词...');
+                
+                if (!window.electronAPI) {
+                    showError(resultsDiv, '需要在 Electron 环境中运行');
+                    return;
+                }
+                
+                const result = await window.electronAPI.autoSearchLyrics(songName, artist);
+                
+                if (result.success) {
+                    let output = '<div class="success">自动搜索成功!</div>';
+                    
+                    // 显示歌曲信息
+                    output += '<div class="song-info">';
+                    output += `<h4>歌曲信息:</h4>`;
+                    output += `<div><strong>ID:</strong> ${result.songInfo.id}</div>`;
+                    output += `<div><strong>名称:</strong> ${result.songInfo.name}</div>`;
+                    output += `<div><strong>艺术家:</strong> ${result.songInfo.artist}</div>`;
+                    output += `<div><strong>专辑:</strong> ${result.songInfo.album}</div>`;
+                    output += '</div>';
+                    
+                    // 显示歌词
+                    if (result.lyrics) {
+                        output += '<h4>歌词内容:</h4>';
+                        output += `<div class="lyrics-display">${result.lyrics}</div>`;
+                    }
+                    
+                    if (result.translatedLyrics) {
+                        output += '<h4>翻译歌词:</h4>';
+                        output += `<div class="lyrics-display">${result.translatedLyrics}</div>`;
+                    }
+                    
+                    resultsDiv.innerHTML = output;
+                } else {
+                    showError(resultsDiv, `自动搜索失败: ${result.error}`);
+                }
+            } catch (error) {
+                showError(resultsDiv, `搜索出错: ${error.message}`);
+            }
+        }
+        
+        function showError(element, message) {
+            element.innerHTML = `<div class="error">❌ ${message}</div>`;
+        }
+        
+        function showSuccess(element, message) {
+            element.innerHTML = `<div class="success">✅ ${message}</div>`;
+        }
+        
+        function showInfo(element, message) {
+            element.innerHTML = `<div class="info">ℹ️ ${message}</div>`;
+        }
+        
+        // 页面加载完成后的提示
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!window.electronAPI) {
+                document.body.innerHTML = '<div style="text-align: center; padding: 50px;"><div style="color: red; font-size: 18px;">❌ 此测试页面需要在 MyMusic 应用中运行</div><p>请在 MyMusic 主应用中打开此页面进行测试</p></div>';
+            } else {
+                console.log('✅ Electron API 可用，可以进行测试');
+            }
+        });
+    </script>
+</body>
+</html>

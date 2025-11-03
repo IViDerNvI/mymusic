@@ -1,6 +1,8 @@
 const { app, BrowserWindow, ipcMain, dialog, Menu } = require('electron')
 const path = require('path')
 const fs = require('fs')
+const https = require('https')
+const http = require('http')
 const mm = require('music-metadata')
 const NodeID3 = require('node-id3')
 
@@ -195,6 +197,168 @@ ipcMain.handle('get-file-stats', async (event, filePath) => {
   }
 })
 
+// HTTP请求辅助函数
+function makeHttpRequest(url) {
+  return new Promise((resolve, reject) => {
+    const lib = url.startsWith('https://') ? https : http
+    const request = lib.get(url, (response) => {
+      if (response.statusCode < 200 || response.statusCode > 299) {
+        reject(new Error('HTTP Status Code: ' + response.statusCode))
+        return
+      }
+      
+      const body = []
+      response.on('data', (chunk) => body.push(chunk))
+      response.on('end', () => {
+        try {
+          const responseBody = Buffer.concat(body).toString()
+          resolve(responseBody)
+        } catch (error) {
+          reject(error)
+        }
+      })
+    })
+    
+    request.on('error', (error) => reject(error))
+    request.setTimeout(10000, () => {
+      request.destroy()
+      reject(new Error('Request timeout'))
+    })
+  })
+}
+
+// 搜索歌曲ID
+ipcMain.handle('search-song-id', async (event, songName, artistName = '') => {
+  try {
+    console.log('搜索歌曲:', songName, artistName)
+    
+    // 构建搜索查询
+    const searchQuery = artistName ? `${artistName} ${songName}` : songName
+    const encodedQuery = encodeURIComponent(searchQuery)
+    
+    // 网易云音乐搜索API
+    const searchUrl = `https://music.163.com/api/search/get/web?csrf_token=hlpretag=&hlposttag=&s=${encodedQuery}&type=1&offset=0&total=true&limit=10`
+    
+    console.log('搜索URL:', searchUrl)
+    
+    const response = await makeHttpRequest(searchUrl)
+    const data = JSON.parse(response)
+    
+    if (data.code === 200 && data.result && data.result.songs && data.result.songs.length > 0) {
+      const firstSong = data.result.songs[0]
+      console.log('找到歌曲:', firstSong.name, 'ID:', firstSong.id)
+      
+      return {
+        success: true,
+        songId: firstSong.id,
+        songName: firstSong.name,
+        artistName: firstSong.artists.map(a => a.name).join(', '),
+        albumName: firstSong.album.name,
+        duration: firstSong.duration
+      }
+    } else {
+      console.log('未找到歌曲')
+      return {
+        success: false,
+        error: '未找到匹配的歌曲'
+      }
+    }
+  } catch (error) {
+    console.error('搜索歌曲ID失败:', error)
+    return {
+      success: false,
+      error: error.message
+    }
+  }
+})
+
+// 获取歌词
+ipcMain.handle('fetch-lyrics', async (event, songId) => {
+  try {
+    console.log('获取歌词, 歌曲ID:', songId)
+    
+    const lyricsUrl = `https://music.163.com/api/song/lyric?os=pc&id=${songId}&lv=-1`
+    console.log('歌词URL:', lyricsUrl)
+    
+    const response = await makeHttpRequest(lyricsUrl)
+    const data = JSON.parse(response)
+    
+    if (data.code === 200 && data.lrc && data.lrc.lyric) {
+      console.log('成功获取歌词')
+      return {
+        success: true,
+        lyrics: data.lrc.lyric,
+        translatedLyrics: data.tlyric ? data.tlyric.lyric : null
+      }
+    } else {
+      console.log('歌词数据无效')
+      return {
+        success: false,
+        error: '歌词数据无效或不可用'
+      }
+    }
+  } catch (error) {
+    console.error('获取歌词失败:', error)
+    return {
+      success: false,
+      error: error.message
+    }
+  }
+})
+
+// 自动搜索并获取歌词 (组合功能)
+ipcMain.handle('auto-search-lyrics', async (event, songName, artistName = '') => {
+  try {
+    console.log('自动搜索歌词:', songName, artistName)
+    
+    // 第一步: 搜索歌曲ID
+    const searchQuery = songName
+    const encodedQuery = encodeURIComponent(searchQuery)
+    const searchUrl = `https://music.163.com/api/search/get/web?csrf_token=hlpretag=&hlposttag=&s=${encodedQuery}&type=1&offset=0&total=true&limit=10`
+    
+    console.log('搜索URL:', searchUrl)
+    const searchResponse = await makeHttpRequest(searchUrl)
+    const searchData = JSON.parse(searchResponse)
+    
+    if (searchData.code !== 200 || !searchData.result || !searchData.result.songs || searchData.result.songs.length === 0) {
+      return {
+        success: false,
+        error: '未找到匹配的歌曲'
+      }
+    }
+    
+    const firstSong = searchData.result.songs[0]
+    console.log('找到歌曲:', firstSong.name, 'ID:', firstSong.id)
+    
+    // 第二步: 获取歌词
+    const lyricsUrl = `https://music.163.com/api/song/lyric?os=pc&id=${firstSong.id}&lv=-1`
+    console.log('歌词URL:', lyricsUrl)
+    
+    const lyricsResponse = await makeHttpRequest(lyricsUrl)
+    const lyricsData = JSON.parse(lyricsResponse)
+    
+    if (lyricsData.code !== 200 || !lyricsData.lrc || !lyricsData.lrc.lyric) {
+      return {
+        success: false,
+        error: '歌词数据无效或不可用'
+      }
+    }
+    
+    // 返回完整信息
+    return {
+      success: true,
+      songInfo: {
+        id: firstSong.id,
+        name: firstSong.name,
+        artist: firstSong.artists.map(a => a.name).join(', '),
+        album: firstSong.album.name,
+        duration: firstSong.duration
+      },
+      lyrics: lyricsData.lrc.lyric,
+      translatedLyrics: lyricsData.tlyric ? lyricsData.tlyric.lyric : null
+    }
+  } catch (error) {
+    console.error('自动搜索歌词失败:', error)
 // 读取音乐文件元数据
 ipcMain.handle('read-music-metadata', async (event, filePath) => {
   try {
