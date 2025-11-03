@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   selectMusicFolder: () => ipcRenderer.invoke('select-music-folder'),
   readMusicFilesFromFolder: (folderPath) => ipcRenderer.invoke('read-music-files-from-folder', folderPath),
   getFileStats: (filePath) => ipcRenderer.invoke('get-file-stats', filePath),
+  readMusicMetadata: (filePath) => ipcRenderer.invoke('read-music-metadata', filePath),
   
   // 菜单事件监听
   onMenuImportFiles: (callback) => ipcRenderer.on('menu-import-files', callback),
