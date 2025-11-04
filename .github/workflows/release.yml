@@ -33,7 +33,7 @@ jobs:
       - name: Build/release (Electron app)
         run: npm run dist
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
 
       - name: Upload artifacts to GitHub Release
         uses: softprops/action-gh-release@v2
@@ -47,4 +47,4 @@ jobs:
             dist/*.yml
             dist/*.blockmap 
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PERSONAL_ACCESS_TOKEN }}
