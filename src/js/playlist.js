@@ -2,8 +2,14 @@
 
 class PlaylistManager {
     constructor() {
+        console.log('PlaylistManager: 构造函数开始');
         this.playlists = [];
-        this.init();
+        try {
+            this.init();
+            console.log('PlaylistManager: 初始化完成');
+        } catch (error) {
+            console.error('PlaylistManager: 初始化失败:', error);
+        }
     }
     
     init() {
@@ -13,10 +19,18 @@ class PlaylistManager {
     }
     
     bindEvents() {
+        console.log('PlaylistManager: 绑定事件开始');
         // 创建播放列表按钮
         const createBtn = document.getElementById('create-playlist');
+        console.log('PlaylistManager: 找到创建按钮:', createBtn);
         if (createBtn) {
-            createBtn.addEventListener('click', () => this.showCreateDialog());
+            createBtn.addEventListener('click', () => {
+                console.log('PlaylistManager: 创建按钮被点击');
+                this.showCreateDialog();
+            });
+            console.log('PlaylistManager: 事件监听器已绑定');
+        } else {
+            console.warn('PlaylistManager: 未找到创建播放列表按钮 (#create-playlist)');
         }
     }
     
@@ -69,37 +83,107 @@ class PlaylistManager {
         });
     }
     
-    showCreateDialog() {
-        const name = prompt('请输入播放列表名称:');
-        if (name && name.trim()) {
-            this.createPlaylist(name.trim());
+    async showCreateDialog() {
+        try {
+            console.log('显示创建播放列表对话框');
+            
+            // 检查 Utils.showInputDialog 是否可用
+            if (typeof Utils === 'undefined' || !Utils.showInputDialog) {
+                throw new Error('showInputDialog 函数不可用');
+            }
+            
+            const name = await Utils.showInputDialog(
+                '创建播放列表', 
+                '请输入播放列表名称', 
+                ''
+            );
+            
+            if (name && name.trim()) {
+                console.log('用户输入的名称:', name.trim());
+                this.createPlaylist(name.trim());
+            } else {
+                console.log('用户取消或输入为空');
+            }
+        } catch (error) {
+            console.error('显示创建对话框失败:', error);
+            if (typeof Utils !== 'undefined' && Utils.showNotification) {
+                Utils.showNotification(`显示创建对话框失败: ${error.message}`, 'error');
+            } else {
+                // 降级到原生 confirm 作为备选方案
+                const name = window.confirm('无法显示输入对话框，是否使用默认名称创建播放列表？') 
+                    ? `新建播放列表_${Date.now()}` 
+                    : null;
+                if (name) {
+                    this.createPlaylist(name);
+                }
+            }
         }
     }
     
     createPlaylist(name, description = '') {
-        // 检查重名
-        if (this.playlists.some(p => p.name === name)) {
-            Utils.showNotification('播放列表名称已存在', 'error');
+        try {
+            console.log('开始创建播放列表:', name);
+            
+            // 检查依赖项
+            if (typeof storage === 'undefined') {
+                throw new Error('storage 模块未加载');
+            }
+            if (typeof Utils === 'undefined') {
+                throw new Error('Utils 模块未加载');
+            }
+            
+            // 检查重名
+            if (this.playlists.some(p => p.name === name)) {
+                Utils.showNotification('播放列表名称已存在', 'error');
+                return null;
+            }
+            
+            console.log('调用 storage.createPlaylist');
+            const playlist = storage.createPlaylist(name, description);
+            console.log('播放列表创建成功:', playlist);
+            
+            this.playlists = storage.getPlaylists();
+            this.updatePlaylistNav();
+            
+            Utils.showNotification(`播放列表 "${name}" 创建成功`, 'success');
+            
+            // 自动切换到新创建的播放列表
+            this.showPlaylist(playlist.id);
+            
+            return playlist;
+        } catch (error) {
+            console.error('创建播放列表失败:', error);
+            if (typeof Utils !== 'undefined' && Utils.showNotification) {
+                Utils.showNotification(`创建播放列表失败: ${error.message}`, 'error');
+            } else {
+                alert(`创建播放列表失败: ${error.message}`);
+            }
             return null;
         }
-        
-        const playlist = storage.createPlaylist(name, description);
-        this.playlists = storage.getPlaylists();
-        this.updatePlaylistNav();
-        
-        Utils.showNotification(`播放列表 "${name}" 创建成功`, 'success');
-        
-        // 自动切换到新创建的播放列表
-        this.showPlaylist(playlist.id);
-        
-        return playlist;
     }
     
-    deletePlaylist(playlistId) {
+    async deletePlaylist(playlistId) {
         const playlist = this.playlists.find(p => p.id === playlistId);
         if (!playlist) return false;
         
-        const confirmed = confirm(`确定要删除播放列表 "${playlist.name}" 吗？`);
+        let confirmed = false;
+        try {
+            if (Utils && Utils.showConfirmDialog) {
+                confirmed = await Utils.showConfirmDialog(
+                    '删除播放列表',
+                    `确定要删除播放列表 "${playlist.name}" 吗？`,
+                    '删除',
+                    '取消'
+                );
+            } else {
+                // 降级到原生 confirm
+                confirmed = window.confirm(`确定要删除播放列表 "${playlist.name}" 吗？`);
+            }
+        } catch (error) {
+            console.error('显示确认对话框失败:', error);
+            confirmed = window.confirm(`确定要删除播放列表 "${playlist.name}" 吗？`);
+        }
+        
         if (!confirmed) return false;
         
         const success = storage.deletePlaylist(playlistId);
@@ -344,12 +428,28 @@ class PlaylistManager {
         
         // 从播放列表移除
         playlistView.querySelectorAll('.remove-from-playlist-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
+            btn.addEventListener('click', async (e) => {
                 e.stopPropagation();
                 const path = btn.dataset.path;
                 const playlistId = btn.dataset.playlistId;
                 
-                const confirmed = confirm('确定要从播放列表中移除这首歌吗？');
+                let confirmed = false;
+                try {
+                    if (Utils && Utils.showConfirmDialog) {
+                        confirmed = await Utils.showConfirmDialog(
+                            '移除歌曲',
+                            '确定要从播放列表中移除这首歌吗？',
+                            '移除',
+                            '取消'
+                        );
+                    } else {
+                        confirmed = window.confirm('确定要从播放列表中移除这首歌吗？');
+                    }
+                } catch (error) {
+                    console.error('显示确认对话框失败:', error);
+                    confirmed = window.confirm('确定要从播放列表中移除这首歌吗？');
+                }
+                
                 if (confirmed) {
                     this.removeFromPlaylist(playlistId, path);
                 }
@@ -467,24 +567,59 @@ class PlaylistManager {
     }
     
     // 获取播放列表选择器（用于添加歌曲到播放列表）
-    showPlaylistSelector(songPaths) {
-        if (this.playlists.length === 0) {
-            Utils.showNotification('请先创建一个播放列表', 'info');
-            return;
-        }
-        
-        // 创建选择对话框（简化版本）
-        const playlistNames = this.playlists.map(p => p.name);
-        const selected = prompt(`选择播放列表:\n${playlistNames.map((name, i) => `${i + 1}. ${name}`).join('\n')}\n\n请输入数字:`);
-        
-        if (selected) {
-            const index = parseInt(selected) - 1;
-            if (index >= 0 && index < this.playlists.length) {
-                const playlist = this.playlists[index];
-                this.addToPlaylist(playlist.id, songPaths);
-            } else {
-                Utils.showNotification('无效的选择', 'error');
+    async showPlaylistSelector(songPaths) {
+        try {
+            if (this.playlists.length === 0) {
+                // 如果没有播放列表，询问是否创建新的
+                if (Utils && Utils.showConfirmDialog) {
+                    const shouldCreate = await Utils.showConfirmDialog(
+                        '没有播放列表',
+                        '您还没有创建任何播放列表。是否要创建一个新的播放列表？',
+                        '创建',
+                        '取消'
+                    );
+                    if (shouldCreate) {
+                        await this.showCreateDialog();
+                    }
+                } else {
+                    Utils.showNotification('请先创建一个播放列表', 'info');
+                }
+                return;
             }
+            
+            // 检查 Utils.showSelectDialog 是否可用
+            if (!Utils || !Utils.showSelectDialog) {
+                // 降级到简化版本
+                const playlistNames = this.playlists.map(p => p.name);
+                const selectedText = window.prompt(`选择播放列表:\n${playlistNames.map((name, i) => `${i + 1}. ${name}`).join('\n')}\n\n请输入数字:`);
+                
+                if (selectedText) {
+                    const index = parseInt(selectedText) - 1;
+                    if (index >= 0 && index < this.playlists.length) {
+                        const playlist = this.playlists[index];
+                        this.addToPlaylist(playlist.id, songPaths);
+                    } else {
+                        Utils.showNotification('无效的选择', 'error');
+                    }
+                }
+                return;
+            }
+            
+            // 使用自定义选择对话框
+            const playlistNames = this.playlists.map(p => p.name);
+            const selectedIndex = await Utils.showSelectDialog(
+                '添加到播放列表',
+                playlistNames,
+                `选择要添加 ${songPaths.length} 首歌曲的播放列表:`
+            );
+            
+            if (selectedIndex !== null && selectedIndex >= 0) {
+                const playlist = this.playlists[selectedIndex];
+                this.addToPlaylist(playlist.id, songPaths);
+            }
+        } catch (error) {
+            console.error('显示播放列表选择器失败:', error);
+            Utils.showNotification(`操作失败: ${error.message}`, 'error');
         }
     }
     
@@ -640,7 +775,28 @@ class PlaylistManager {
             avgDuration: songs.length > 0 ? totalDuration / songs.length : 0
         };
     }
+    // 测试函数 - 用于调试
+    testCreatePlaylist() {
+        console.log('=== 播放列表创建测试 ===');
+        console.log('storage 可用:', typeof storage !== 'undefined');
+        console.log('Utils 可用:', typeof Utils !== 'undefined');
+        console.log('当前播放列表数量:', this.playlists.length);
+        
+        try {
+            const testName = `测试播放列表_${Date.now()}`;
+            console.log('尝试创建播放列表:', testName);
+            const result = this.createPlaylist(testName);
+            console.log('创建结果:', result);
+            return result;
+        } catch (error) {
+            console.error('测试失败:', error);
+            return null;
+        }
+    }
 }
 
 // 创建全局播放列表管理器实例
 window.playlistManager = new PlaylistManager();
+
+// 暴露测试函数到控制台（开发模式）
+window.testPlaylist = () => window.playlistManager.testCreatePlaylist();

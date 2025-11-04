@@ -148,19 +148,41 @@ class StorageManager {
     }
     
     createPlaylist(name, description = '') {
-        const playlists = this.getPlaylists();
-        const playlist = {
-            id: Utils.generateId(),
-            name,
-            description,
-            songs: [],
-            createdAt: Date.now(),
-            updatedAt: Date.now()
-        };
-        
-        playlists.push(playlist);
-        this.setPlaylists(playlists);
-        return playlist;
+        try {
+            console.log('Storage: 开始创建播放列表');
+            
+            // 检查 Utils 是否可用
+            if (typeof Utils === 'undefined') {
+                throw new Error('Utils 模块未加载');
+            }
+            
+            const playlists = this.getPlaylists();
+            console.log('Storage: 当前播放列表数量:', playlists.length);
+            
+            const playlist = {
+                id: Utils.generateId(),
+                name,
+                description,
+                songs: [],
+                createdAt: Date.now(),
+                updatedAt: Date.now()
+            };
+            
+            console.log('Storage: 新播放列表对象:', playlist);
+            
+            playlists.push(playlist);
+            const success = this.setPlaylists(playlists);
+            
+            if (!success) {
+                throw new Error('保存播放列表到本地存储失败');
+            }
+            
+            console.log('Storage: 播放列表创建并保存成功');
+            return playlist;
+        } catch (error) {
+            console.error('Storage: 创建播放列表失败:', error);
+            throw error; // 重新抛出错误让调用者处理
+        }
     }
     
     deletePlaylist(playlistId) {
