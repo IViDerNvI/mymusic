@@ -570,6 +570,247 @@ class KeyboardShortcuts {
 // 全局键盘快捷键实例
 const keyboardShortcuts = new KeyboardShortcuts();
 
+// 音效处理器
+class AudioEffectProcessor {
+    constructor(audioElement) {
+        this.audio = audioElement;
+        this.context = null;
+        this.source = null;
+        this.gainNode = null;
+        this.filters = [];
+        this.currentPreset = 'normal';
+        this.isInitialized = false;
+        
+        // 预设音效配置
+        this.presets = {
+            normal: {
+                name: '普通',
+                filters: []
+            },
+            pop: {
+                name: '流行',
+                filters: [
+                    { type: 'peaking', frequency: 1000, Q: 1, gain: 2 },
+                    { type: 'peaking', frequency: 3000, Q: 1, gain: 3 },
+                    { type: 'highshelf', frequency: 8000, gain: 2 }
+                ]
+            },
+            rock: {
+                name: '摇滚',
+                filters: [
+                    { type: 'peaking', frequency: 100, Q: 1, gain: 4 },
+                    { type: 'peaking', frequency: 500, Q: 1, gain: 2 },
+                    { type: 'peaking', frequency: 2000, Q: 1, gain: -1 },
+                    { type: 'peaking', frequency: 4000, Q: 1, gain: 3 }
+                ]
+            },
+            jazz: {
+                name: '爵士',
+                filters: [
+                    { type: 'peaking', frequency: 200, Q: 1, gain: 2 },
+                    { type: 'peaking', frequency: 1000, Q: 1, gain: 1 },
+                    { type: 'peaking', frequency: 5000, Q: 1, gain: 1 },
+                    { type: 'highshelf', frequency: 10000, gain: 1 }
+                ]
+            },
+            classical: {
+                name: '古典',
+                filters: [
+                    { type: 'peaking', frequency: 250, Q: 1, gain: 1 },
+                    { type: 'peaking', frequency: 1000, Q: 1, gain: -1 },
+                    { type: 'peaking', frequency: 3000, Q: 1, gain: 2 },
+                    { type: 'peaking', frequency: 8000, Q: 1, gain: 2 }
+                ]
+            },
+            electronic: {
+                name: '电子',
+                filters: [
+                    { type: 'peaking', frequency: 60, Q: 1, gain: 5 },
+                    { type: 'peaking', frequency: 200, Q: 1, gain: 2 },
+                    { type: 'peaking', frequency: 8000, Q: 1, gain: 3 },
+                    { type: 'highshelf', frequency: 12000, gain: 4 }
+                ]
+            },
+            vocal: {
+                name: '人声',
+                filters: [
+                    { type: 'peaking', frequency: 1000, Q: 1, gain: 3 },
+                    { type: 'peaking', frequency: 2500, Q: 1, gain: 4 },
+                    { type: 'peaking', frequency: 4000, Q: 1, gain: 2 },
+                    { type: 'lowpass', frequency: 12000 }
+                ]
+            },
+            bass: {
+                name: '低音',
+                filters: [
+                    { type: 'peaking', frequency: 60, Q: 1, gain: 6 },
+                    { type: 'peaking', frequency: 150, Q: 1, gain: 4 },
+                    { type: 'peaking', frequency: 300, Q: 1, gain: 2 },
+                    { type: 'peaking', frequency: 2000, Q: 1, gain: -2 }
+                ]
+            }
+        };
+    }
+    
+    init() {
+        try {
+            // 检查是否已经初始化
+            if (this.isInitialized) {
+                console.log('音效处理器已经初始化');
+                return true;
+            }
+            
+            // 创建AudioContext - 延迟到用户交互时
+            this.isInitialized = true;
+            console.log('音效处理器准备完成，等待用户交互激活');
+            return true;
+        } catch (error) {
+            console.error('音效处理器初始化失败:', error);
+            return false;
+        }
+    }
+    
+    // 延迟初始化AudioContext - 在用户交互时调用
+    ensureAudioContext() {
+        if (this.context && this.context.state !== 'closed') {
+            return true;
+        }
+        
+        try {
+            this.context = new (window.AudioContext || window.webkitAudioContext)();
+            
+            // 检查AudioContext状态
+            if (this.context.state === 'suspended') {
+                // 尝试恢复AudioContext
+                this.context.resume().then(() => {
+                    console.log('AudioContext已恢复');
+                }).catch(error => {
+                    console.warn('AudioContext恢复失败:', error);
+                });
+            }
+            
+            // 创建音频源和增益节点
+            if (!this.source) {
+                this.source = this.context.createMediaElementSource(this.audio);
+            }
+            
+            if (!this.gainNode) {
+                this.gainNode = this.context.createGain();
+            }
+            
+            // 连接到输出
+            this.source.connect(this.gainNode);
+            this.gainNode.connect(this.context.destination);
+            
+            console.log('AudioContext创建成功');
+            return true;
+        } catch (error) {
+            console.error('AudioContext创建失败:', error);
+            return false;
+        }
+    }
+    
+    applyPreset(presetName) {
+        if (!this.isInitialized || !this.presets[presetName]) {
+            console.warn('音效处理器未初始化或预设不存在:', presetName);
+            return false;
+        }
+        
+        // 确保AudioContext已创建并激活
+        if (!this.ensureAudioContext()) {
+            console.error('AudioContext创建失败，无法应用音效');
+            return false;
+        }
+        
+        // 检查音频是否可用
+        if (this.audio.paused && this.audio.currentTime === 0) {
+            console.warn('音频尚未开始播放，音效将在播放时生效');
+            // 仍然保存预设，以便音频播放时应用
+            this.currentPreset = presetName;
+            return true;
+        }
+        
+        try {
+            // 清除现有滤波器
+            this.clearFilters();
+            
+            const preset = this.presets[presetName];
+            console.log(`应用音效预设: ${preset.name}`);
+            
+            // 如果是普通预设，直接连接
+            if (presetName === 'normal' || preset.filters.length === 0) {
+                this.source.disconnect();
+                this.source.connect(this.gainNode);
+                this.currentPreset = presetName;
+                return true;
+            }
+            
+            // 重新连接音频链路
+            this.source.disconnect();
+            let currentNode = this.source;
+            
+            // 应用滤波器
+            preset.filters.forEach((filterConfig, index) => {
+                const filter = this.context.createBiquadFilter();
+                filter.type = filterConfig.type;
+                filter.frequency.value = filterConfig.frequency;
+                
+                if (filterConfig.Q !== undefined) {
+                    filter.Q.value = filterConfig.Q;
+                }
+                
+                if (filterConfig.gain !== undefined) {
+                    filter.gain.value = filterConfig.gain;
+                }
+                
+                currentNode.connect(filter);
+                currentNode = filter;
+                this.filters.push(filter);
+            });
+            
+            // 连接到增益节点和输出
+            currentNode.connect(this.gainNode);
+            
+            this.currentPreset = presetName;
+            console.log(`音效预设 ${preset.name} 应用成功`);
+            return true;
+            
+        } catch (error) {
+            console.error('应用音效预设失败:', error);
+            // 尝试恢复基本连接
+            try {
+                this.source.disconnect();
+                this.source.connect(this.gainNode);
+            } catch (recoveryError) {
+                console.error('恢复音频连接失败:', recoveryError);
+            }
+            return false;
+        }
+    }
+    
+    clearFilters() {
+        this.filters.forEach(filter => {
+            filter.disconnect();
+        });
+        this.filters = [];
+    }
+    
+    getCurrentPreset() {
+        return this.currentPreset;
+    }
+    
+    getPresetName(presetKey) {
+        return this.presets[presetKey]?.name || presetKey;
+    }
+    
+    getAllPresets() {
+        return Object.keys(this.presets).map(key => ({
+            key,
+            name: this.presets[key].name
+        }));
+    }
+}
+
 // 音频分析工具（简单的可视化）
 class AudioAnalyzer {
     constructor(audioElement) {
@@ -641,7 +882,8 @@ window.Utils = {
     ColorUtils,
     SearchUtils,
     KeyboardShortcuts,
-    AudioAnalyzer
+    AudioAnalyzer,
+    AudioEffectProcessor
 };
 
 // 导出键盘快捷键实例

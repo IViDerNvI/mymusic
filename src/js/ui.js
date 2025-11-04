@@ -19,6 +19,7 @@ class UIManager {
         this.loadTheme();
         this.bindContextMenu();
         this.bindKeyboardShortcuts();
+        this.loadEqualizerState();
     }
     
     bindNavigation() {
@@ -415,28 +416,93 @@ class UIManager {
             presetBtn.classList.add('active');
         }
         
-        // 保存设置
-        storage.setSetting('equalizer', preset);
-        
-        // 应用音效（这里可以扩展实际的音频处理）
-        this.applyEqualizerPreset(preset);
-        
-        const presetNames = {
-            'normal': '普通',
-            'pop': '流行',
-            'rock': '摇滚',
-            'jazz': '爵士',
-            'classical': '古典',
-            'electronic': '电子'
-        };
-        
-        Utils.showNotification(`已应用 ${presetNames[preset]} 音效`, 'success');
+        // 应用音效到播放器
+        if (window.player && window.player.applyEqualizerPreset) {
+            const success = window.player.applyEqualizerPreset(preset);
+            if (success) {
+                // 更新当前音效显示
+                this.updateCurrentEqualizerDisplay(preset);
+                
+                // 获取音效名称
+                const presetName = window.player.getEqualizerPresetName(preset);
+                
+                // 检查是否有音频正在播放
+                if (window.player.isPlaying) {
+                    Utils.showNotification(`已应用 ${presetName} 音效`, 'success');
+                } else {
+                    Utils.showNotification(`已选择 ${presetName} 音效，将在播放时生效`, 'info');
+                }
+            } else {
+                // 音效应用失败，但仍保存设置
+                storage.setSetting('equalizer', preset);
+                this.updateCurrentEqualizerDisplay(preset);
+                
+                const presetName = window.player.getEqualizerPresetName(preset);
+                
+                // 提供更详细的错误信息
+                if (!window.player.currentSong) {
+                    Utils.showNotification(`已选择 ${presetName} 音效，请先播放音乐`, 'warning');
+                } else {
+                    Utils.showNotification(`${presetName} 音效设置已保存，可能需要重新播放歌曲`, 'warning');
+                }
+            }
+        } else {
+            // 降级处理：仅保存设置
+            storage.setSetting('equalizer', preset);
+            this.updateCurrentEqualizerDisplay(preset);
+            
+            const presetNames = {
+                'normal': '普通',
+                'pop': '流行',
+                'rock': '摇滚',
+                'jazz': '爵士',
+                'classical': '古典',
+                'electronic': '电子',
+                'vocal': '人声',
+                'bass': '低音'
+            };
+            
+            Utils.showNotification(`已选择 ${presetNames[preset]} 音效`, 'info');
+        }
     }
     
-    applyEqualizerPreset(preset) {
-        // 这里可以实现真正的音频均衡器效果
-        // 目前只是存储设置
-        console.log(`应用音效预设: ${preset}`);
+    updateCurrentEqualizerDisplay(preset) {
+        const currentEqName = document.getElementById('current-eq-name');
+        if (currentEqName) {
+            if (window.player && window.player.getEqualizerPresetName) {
+                currentEqName.textContent = window.player.getEqualizerPresetName(preset);
+            } else {
+                const presetNames = {
+                    'normal': '普通',
+                    'pop': '流行',
+                    'rock': '摇滚',
+                    'jazz': '爵士',
+                    'classical': '古典',
+                    'electronic': '电子',
+                    'vocal': '人声',
+                    'bass': '低音'
+                };
+                currentEqName.textContent = presetNames[preset] || preset;
+            }
+        }
+    }
+    
+    loadEqualizerState() {
+        // 加载保存的均衡器状态
+        const savedPreset = storage.getSetting('equalizer') || 'normal';
+        
+        // 设置按钮状态
+        document.querySelectorAll('.eq-preset').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        
+        const activeBtn = document.querySelector(`[data-preset="${savedPreset}"]`);
+        if (activeBtn) {
+            activeBtn.classList.add('active');
+        }
+        
+        // 更新显示
+        this.updateCurrentEqualizerDisplay(savedPreset);
     }
     
     updateLyricsPanel() {
