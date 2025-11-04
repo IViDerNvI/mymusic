@@ -173,13 +173,56 @@
             <button id="close-equalizer" class="btn btn-icon">✖️</button>
         </div>
         <div class="equalizer-content">
-            <div class="preset-buttons">
-                <button class="eq-preset active" data-preset="normal">普通</button>
-                <button class="eq-preset" data-preset="pop">流行</button>
-                <button class="eq-preset" data-preset="rock">摇滚</button>
-                <button class="eq-preset" data-preset="jazz">爵士</button>
-                <button class="eq-preset" data-preset="classical">古典</button>
-                <button class="eq-preset" data-preset="electronic">电子</button>
+            <div class="preset-section">
+                <h4>预设音效</h4>
+                <div class="preset-grid">
+                    <button class="eq-preset active" data-preset="normal">
+                        <span class="preset-icon">🔊</span>
+                        <span class="preset-name">普通</span>
+                        <span class="preset-desc">原始音质</span>
+                    </button>
+                    <button class="eq-preset" data-preset="pop">
+                        <span class="preset-icon">🎤</span>
+                        <span class="preset-name">流行</span>
+                        <span class="preset-desc">清晰人声</span>
+                    </button>
+                    <button class="eq-preset" data-preset="rock">
+                        <span class="preset-icon">🎸</span>
+                        <span class="preset-name">摇滚</span>
+                        <span class="preset-desc">强劲节拍</span>
+                    </button>
+                    <button class="eq-preset" data-preset="jazz">
+                        <span class="preset-icon">🎺</span>
+                        <span class="preset-name">爵士</span>
+                        <span class="preset-desc">温暖音色</span>
+                    </button>
+                    <button class="eq-preset" data-preset="classical">
+                        <span class="preset-icon">🎼</span>
+                        <span class="preset-name">古典</span>
+                        <span class="preset-desc">丰富层次</span>
+                    </button>
+                    <button class="eq-preset" data-preset="electronic">
+                        <span class="preset-icon">🎛️</span>
+                        <span class="preset-name">电子</span>
+                        <span class="preset-desc">低音增强</span>
+                    </button>
+                    <button class="eq-preset" data-preset="vocal">
+                        <span class="preset-icon">🎙️</span>
+                        <span class="preset-name">人声</span>
+                        <span class="preset-desc">突出人声</span>
+                    </button>
+                    <button class="eq-preset" data-preset="bass">
+                        <span class="preset-icon">🔉</span>
+                        <span class="preset-name">低音</span>
+                        <span class="preset-desc">重低音</span>
+                    </button>
+                </div>
+            </div>
+            <div class="equalizer-info">
+                <div class="current-preset">
+                    <span class="label">当前音效：</span>
+                    <span id="current-eq-name">普通</span>
+                </div>
             </div>
         </div>
     </div>
@@ -195,7 +238,7 @@
                 <h4>外观</h4>
                 <div class="setting-item">
                     <label>主题</label>
-                    <select id="theme-select">
+                    <select id="theme-select" title="选择主题">
                         <option value="dark">深色</option>
                         <option value="light">浅色</option>
                     </select>
