@@ -14,6 +14,7 @@ class MusicPlayer {
         this.duration = 0;
         this.crossfade = true;
         this.analyzer = null;
+        this.effectProcessor = null;
         
         // 回调函数
         this.onSongChange = null;
@@ -28,9 +29,17 @@ class MusicPlayer {
         this.loadSettings();
         this.bindKeyboardShortcuts();
         
-        // 初始化音频分析器
-        this.analyzer = new Utils.AudioAnalyzer(this.audio);
-        this.analyzer.init();
+        // 初始化音效处理器（优先级更高）
+        this.effectProcessor = new Utils.AudioEffectProcessor(this.audio);
+        this.effectProcessor.init();
+        
+        // 初始化音频分析器（如果需要的话）
+        // 注意：为了避免冲突，暂时禁用AudioAnalyzer
+        // this.analyzer = new Utils.AudioAnalyzer(this.audio);
+        // this.analyzer.init();
+        
+        // 加载保存的音效设置
+        this.loadEqualizerSettings();
     }
     
     setupAudioEvents() {
@@ -291,11 +300,30 @@ class MusicPlayer {
         
         try {
             await this.audio.play();
+            
+            // 在播放开始后激活音效处理器
+            this.activateAudioEffects();
+            
             return true;
         } catch (error) {
             console.error('播放失败:', error);
             Utils.showNotification('播放失败', 'error');
             return false;
+        }
+    }
+    
+    // 激活音效处理器
+    activateAudioEffects() {
+        if (this.effectProcessor && !this.effectProcessor.context) {
+            console.log('激活音效处理器...');
+            if (this.effectProcessor.ensureAudioContext()) {
+                // 重新应用当前预设
+                const currentPreset = this.effectProcessor.getCurrentPreset();
+                if (currentPreset !== 'normal') {
+                    this.effectProcessor.applyPreset(currentPreset);
+                }
+                console.log('音效处理器激活成功');
+            }
         }
     }
     
@@ -727,6 +755,100 @@ class MusicPlayer {
             return this.analyzer.getFrequencyData();
         }
         return null;
+    }
+    
+    // 音效相关方法
+    applyEqualizerPreset(presetName) {
+        if (this.effectProcessor) {
+            const success = this.effectProcessor.applyPreset(presetName);
+            if (success) {
+                // 保存设置
+                storage.setSetting('equalizer', presetName);
+                console.log(`已应用音效预设: ${presetName}`);
+                return true;
+            } else {
+                // 如果应用失败，尝试激活音效处理器后重试
+                console.log('音效应用失败，尝试激活音效处理器...');
+                this.activateAudioEffects();
+                
+                // 短暂延迟后重试
+                setTimeout(() => {
+                    if (this.effectProcessor.applyPreset(presetName)) {
+                        storage.setSetting('equalizer', presetName);
+                        console.log(`重试成功，已应用音效预设: ${presetName}`);
+                        
+                        // 通知UI更新
+                        const presetName_display = this.effectProcessor.getPresetName(presetName);
+                        Utils.showNotification(`${presetName_display} 音效已生效`, 'success');
+                    }
+                }, 500);
+                
+                // 仍然保存设置，即使当前应用失败
+                storage.setSetting('equalizer', presetName);
+                return false;
+            }
+        }
+        return false;
+    }
+    
+    getCurrentEqualizerPreset() {
+        if (this.effectProcessor) {
+            return this.effectProcessor.getCurrentPreset();
+        }
+        return 'normal';
+    }
+    
+    getEqualizerPresetName(presetKey) {
+        if (this.effectProcessor) {
+            return this.effectProcessor.getPresetName(presetKey);
+        }
+        return presetKey;
+    }
+    
+    getAllEqualizerPresets() {
+        if (this.effectProcessor) {
+            return this.effectProcessor.getAllPresets();
+        }
+        return [];
+    }
+    
+    loadEqualizerSettings() {
+        const savedPreset = storage.getSetting('equalizer') || 'normal';
+        if (this.effectProcessor) {
+            // 检查浏览器支持
+            if (this.checkAudioEffectSupport()) {
+                this.effectProcessor.applyPreset(savedPreset);
+            } else {
+                console.warn('浏览器不支持Web Audio API，音效功能将被禁用');
+            }
+        }
+    }
+    
+    checkAudioEffectSupport() {
+        try {
+            // 检查Web Audio API支持
+            const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContextClass) {
+                return false;
+            }
+            
+            // 检查必要的API
+            const testContext = new AudioContextClass();
+            const hasRequiredFeatures = 
+                testContext.createMediaElementSource &&
+                testContext.createBiquadFilter &&
+                testContext.createGain;
+            
+            // 关闭测试用的AudioContext
+            if (testContext.close) {
+                testContext.close();
+            }
+            
+            return hasRequiredFeatures;
+        } catch (error) {
+            console.warn('Audio effect support check failed:', error);
+            return false;
+        }
     }
 }
 
