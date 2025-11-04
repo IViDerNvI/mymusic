@@ -10,12 +10,7 @@
     "pack": "electron-builder --dir",
     "dist": "electron-builder"
   },
-  "keywords": [
-    "music",
-    "player",
-    "electron",
-    "audio"
-  ],
+  "keywords": ["music", "player", "electron", "audio"],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
@@ -26,5 +21,19 @@
   "dependencies": {
     "music-metadata": "^10.0.0",
     "node-id3": "^0.2.6"
+  },
+  "build": {
+    "appId": "com.ividernvi.mymusic",
+    "productName": "MyMusic",
+    "linux": {
+      "target": ["AppImage"],       
+      "category": "AudioVideo"       
+    },
+    "mac": {
+      "target": "dmg"
+    },
+    "win": {
+      "target": "nsis"
+    }
   }
 }
