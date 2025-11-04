@@ -261,26 +261,142 @@
     font-size: 16px;
 }
 
-.lyrics-line {
-    padding: 8px 0;
-    transition: color 0.3s ease;
-    cursor: pointer;
+.lyrics-controls {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--border-color);
 }
 
-.lyrics-line.active {
+.lyrics-controls .btn {
+    font-size: 12px;
+    padding: 6px 12px;
+}
+
+.lyric-line {
+    padding: 12px 0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    border-radius: 6px;
+    margin: 2px 0;
+}
+
+.lyric-line:hover {
+    background: var(--bg-tertiary);
+    padding-left: 8px;
+}
+
+.lyric-text {
+    font-size: 16px;
+    line-height: 1.6;
+    margin-bottom: 4px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform-origin: left center;
+}
+
+.lyric-translation {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    font-style: italic;
+    margin-left: 12px;
+}
+
+.lyric-line.active {
+    background: linear-gradient(90deg, var(--accent-color)20, transparent);
+    border-left: 4px solid var(--accent-color);
+    padding-left: 16px;
+    margin: 8px 0;
+    border-radius: 6px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transform: translateX(8px);
+    box-shadow: 0 2px 8px rgba(74, 144, 226, 0.15);
+    animation: lyricPulse 2s ease-in-out infinite;
+}
+
+@keyframes lyricPulse {
+    0%, 100% {
+        box-shadow: 0 2px 8px rgba(74, 144, 226, 0.15);
+    }
+    50% {
+        box-shadow: 0 4px 16px rgba(74, 144, 226, 0.25);
+    }
+}
+
+.lyric-line.active .lyric-text {
+    color: var(--accent-color);
+    font-weight: 700;
+    font-size: 18px;
+    transform: scale(1.08);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    text-shadow: 0 1px 2px rgba(74, 144, 226, 0.2);
+    animation: lyricTextBounce 0.5s ease-out;
+}
+
+@keyframes lyricTextBounce {
+    0% {
+        transform: scale(1.0);
+    }
+    50% {
+        transform: scale(1.12);
+    }
+    100% {
+        transform: scale(1.08);
+    }
+}
+
+.lyric-line.lyric-entering {
+    transform: translateX(4px) scale(0.98);
+    opacity: 0.8;
+}
+
+.lyric-line.lyric-entering .lyric-text {
+    transform: scale(1.02);
     color: var(--accent-color);
     font-weight: 600;
 }
 
-.lyrics-line:hover {
-    color: var(--text-primary);
+.lyric-line.passed .lyric-text {
+    color: var(--text-tertiary);
+    opacity: 0.7;
 }
 
-.no-lyrics {
+/* 增强歌词翻译的显示效果 */
+.lyric-line.active .lyric-translation {
+    color: var(--accent-color);
+    opacity: 0.8;
+    font-weight: 500;
+}
+
+.no-lyrics,
+.searching-lyrics {
     text-align: center;
     color: var(--text-secondary);
-    font-style: italic;
-    margin-top: 50px;
+    padding: 40px 20px;
+    font-size: 14px;
+}
+
+.searching-lyrics {
+    color: var(--accent-color);
+}
+
+/* 响应式歌词面板 */
+@media (max-width: 768px) {
+    .lyrics-panel {
+        width: 100vw;
+        right: 0;
+    }
+    
+    .lyrics-controls {
+        flex-direction: column;
+    }
+    
+    .lyrics-controls .btn {
+        width: 100%;
+        text-align: center;
+    }
 }
 
 /* 均衡器 */
@@ -484,4 +600,142 @@ select:focus-visible {
         transform: translateX(0);
         opacity: 1;
     }
+}
+
+/* 自定义对话框 */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.modal-overlay.show {
+    opacity: 1;
+}
+
+.modal {
+    background: var(--bg-primary);
+    border-radius: 12px;
+    padding: 24px;
+    min-width: 320px;
+    max-width: 500px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--border-color);
+    transform: scale(0.9);
+    transition: transform 0.3s ease;
+}
+
+.modal-overlay.show .modal {
+    transform: scale(1);
+}
+
+.modal-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: var(--text-primary);
+}
+
+.modal-input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-size: 14px;
+    margin-bottom: 20px;
+    transition: border-color 0.2s ease;
+}
+
+.modal-input:focus {
+    outline: none;
+    border-color: var(--accent-color);
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.modal-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.modal-btn-primary {
+    background: var(--accent-color);
+    color: white;
+}
+
+.modal-btn-primary:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
+}
+
+.modal-btn-secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+}
+
+.modal-btn-secondary:hover {
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+}
+
+/* 选择对话框选项 */
+.modal-options {
+    max-height: 300px;
+    overflow-y: auto;
+    margin: 16px 0;
+}
+
+.modal-option {
+    padding: 12px 16px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.modal-option:hover {
+    background: var(--bg-secondary);
+    border-color: var(--accent-color);
+}
+
+.modal-option.selected {
+    background: rgba(var(--accent-color-rgb, 74, 144, 226), 0.1);
+    border-color: var(--accent-color);
+}
+
+.modal-option input[type="radio"] {
+    margin: 0;
+    accent-color: var(--accent-color);
+}
+
+.modal-option label {
+    flex: 1;
+    cursor: pointer;
+    margin: 0;
+    color: var(--text-primary);
 }

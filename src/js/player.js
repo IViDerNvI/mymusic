@@ -15,6 +15,10 @@ class MusicPlayer {
         this.crossfade = true;
         this.analyzer = null;
         
+        // 回调函数
+        this.onSongChange = null;
+        this.onTimeUpdate = null;
+        
         this.init();
     }
     
@@ -48,6 +52,16 @@ class MusicPlayer {
         this.audio.addEventListener('timeupdate', () => {
             this.currentTime = this.audio.currentTime;
             this.updateProgress();
+            
+            // 调用时间更新回调
+            if (this.onTimeUpdate) {
+                this.onTimeUpdate(this.currentTime);
+            }
+            
+            // 同步歌词
+            if (window.lyricsManager) {
+                window.lyricsManager.syncLyrics(this.currentTime);
+            }
             
             // 更新统计信息
             if (this.isPlaying && this.currentSong) {
@@ -314,6 +328,7 @@ class MusicPlayer {
         
         console.log('加载歌曲:', song.title);
         
+        const previousSong = this.currentSong;
         this.currentSong = song;
         this.audio.src = `file://${song.path}`;
         
@@ -321,6 +336,11 @@ class MusicPlayer {
         this.updateDisplay();
         this.updateFavoriteButton();
         this.updateCurrentlyPlaying();
+        
+        // 触发歌曲切换回调
+        if (this.onSongChange && previousSong !== song) {
+            this.onSongChange(song);
+        }
         
         // 更新统计信息
         if (autoPlay) {
@@ -421,6 +441,11 @@ class MusicPlayer {
         }
     }
     
+    // 别名方法，供歌词管理器使用
+    seekTo(time) {
+        this.seek(time);
+    }
+    
     setVolume(volume) {
         this.volume = Math.max(0, Math.min(1, volume));
         this.audio.volume = this.volume;
@@ -506,13 +531,42 @@ class MusicPlayer {
                     albumArtElement.style.display = 'none';
                 }
             }
+            
+            // 加载歌词
+            this.loadSongLyrics();
         } else {
             if (titleElement) titleElement.textContent = '选择一首歌曲开始播放';
             if (artistElement) artistElement.textContent = '-';
             if (albumArtElement) {
                 albumArtElement.style.display = 'none';
             }
+            
+            // 清空歌词
+            if (window.lyricsManager) {
+                window.lyricsManager.clearLyrics();
+            }
         }
+    }
+    
+    // 加载歌曲歌词
+    async loadSongLyrics() {
+        if (!window.lyricsManager || !this.currentSong) return;
+        
+        // 如果歌曲已有本地歌词，直接显示
+        if (this.currentSong.lyrics) {
+            await window.lyricsManager.loadLyrics(
+                this.currentSong.lyrics, 
+                this.currentSong.translatedLyrics
+            );
+        } else {
+            // 清空当前歌词显示
+            window.lyricsManager.clearLyrics();
+        }
+    }
+    
+    // 获取当前歌曲信息 (供歌词管理器使用)
+    getCurrentSong() {
+        return this.currentSong;
     }
     
     updateProgress() {

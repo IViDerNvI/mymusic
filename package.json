@@ -6,14 +6,22 @@
   "scripts": {
     "start": "electron .",
     "dev": "electron . --dev",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
   },
-  "keywords": ["music", "player", "electron", "audio"],
+  "keywords": [
+    "music",
+    "player",
+    "electron",
+    "audio"
+  ],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "devDependencies": {
-    "electron": "^39.0.0"
+    "electron": "^39.0.0",
+    "electron-builder": "^26.0.12"
   },
   "dependencies": {
     "music-metadata": "^10.0.0",

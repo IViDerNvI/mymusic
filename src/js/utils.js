@@ -111,6 +111,20 @@ function createAlbumArtPlaceholder(title) {
     return title.charAt(0).toUpperCase();
 }
 
+// 创建安全的专辑封面 HTML
+function createAlbumArtHTML(song, size = 'medium') {
+    if (song.albumArt) {
+        return `<img src="${song.albumArt}" alt="${song.album}" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="album-art-placeholder" style="display: none;">
+                    ${createAlbumArtPlaceholder(song.title || song.album)}
+                </div>`;
+    } else {
+        return `<div class="album-art-placeholder">
+                    ${createAlbumArtPlaceholder(song.title || song.album)}
+                </div>`;
+    }
+}
+
 // 获取音乐流派的图标
 function getGenreIcon(genre) {
     const icons = {
@@ -161,6 +175,277 @@ function showNotification(message, type = 'info', duration = 3000) {
         notification.classList.remove('show');
         setTimeout(() => notification.remove(), 300);
     }, duration);
+}
+
+// 自定义输入对话框 (替代 prompt)
+function showInputDialog(title, placeholder = '', defaultValue = '') {
+    return new Promise((resolve) => {
+        // 创建模态背景
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        
+        // 创建对话框
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        
+        modal.innerHTML = `
+            <div class="modal-title">${title}</div>
+            <input type="text" class="modal-input" placeholder="${placeholder}" value="${defaultValue}" id="modal-input">
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-secondary" id="modal-cancel">取消</button>
+                <button class="modal-btn modal-btn-primary" id="modal-ok">确定</button>
+            </div>
+        `;
+        
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+        
+        // 获取元素
+        const input = modal.querySelector('#modal-input');
+        const cancelBtn = modal.querySelector('#modal-cancel');
+        const okBtn = modal.querySelector('#modal-ok');
+        
+        // 关闭对话框的函数
+        const closeDialog = (result = null) => {
+            if (overlay.classList.contains('show')) {
+                overlay.classList.remove('show');
+            }
+            setTimeout(() => {
+                try {
+                    if (overlay.parentNode === document.body) {
+                        document.body.removeChild(overlay);
+                    }
+                } catch (error) {
+                    console.warn('对话框移除失败:', error);
+                }
+                resolve(result);
+            }, 300);
+        };
+        
+        // 绑定事件
+        cancelBtn.addEventListener('click', () => closeDialog(null));
+        okBtn.addEventListener('click', () => {
+            const value = input.value.trim();
+            closeDialog(value || null);
+        });
+        
+        // 键盘事件
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const value = input.value.trim();
+                closeDialog(value || null);
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                closeDialog(null);
+            }
+        });
+        
+        // 点击背景关闭
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                closeDialog(null);
+            }
+        });
+        
+        // 显示对话框
+        setTimeout(() => {
+            overlay.classList.add('show');
+            input.focus();
+            input.select();
+        }, 50);
+    });
+}
+
+// 自定义确认对话框 (替代 confirm)
+function showConfirmDialog(title, message, confirmText = '确定', cancelText = '取消') {
+    return new Promise((resolve) => {
+        // 创建模态背景
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        
+        // 创建对话框
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        
+        modal.innerHTML = `
+            <div class="modal-title">${title}</div>
+            <div style="margin-bottom: 20px; color: var(--text-secondary); line-height: 1.5;">${message}</div>
+            <div class="modal-buttons">
+                <button class="modal-btn modal-btn-secondary" id="modal-cancel">${cancelText}</button>
+                <button class="modal-btn modal-btn-primary" id="modal-confirm">${confirmText}</button>
+            </div>
+        `;
+        
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+        
+        // 获取元素
+        const cancelBtn = modal.querySelector('#modal-cancel');
+        const confirmBtn = modal.querySelector('#modal-confirm');
+        
+        // 关闭对话框的函数
+        const closeDialog = (result = false) => {
+            if (overlay.classList.contains('show')) {
+                overlay.classList.remove('show');
+            }
+            setTimeout(() => {
+                try {
+                    if (overlay.parentNode === document.body) {
+                        document.body.removeChild(overlay);
+                    }
+                } catch (error) {
+                    console.warn('对话框移除失败:', error);
+                }
+                resolve(result);
+            }, 300);
+        };
+        
+        // 绑定事件
+        cancelBtn.addEventListener('click', () => closeDialog(false));
+        confirmBtn.addEventListener('click', () => closeDialog(true));
+        
+        // 键盘事件
+        document.addEventListener('keydown', function keyHandler(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                closeDialog(true);
+                document.removeEventListener('keydown', keyHandler);
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                closeDialog(false);
+                document.removeEventListener('keydown', keyHandler);
+            }
+        });
+        
+        // 点击背景关闭
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                closeDialog(false);
+            }
+        });
+        
+        // 显示对话框
+        setTimeout(() => {
+            overlay.classList.add('show');
+            confirmBtn.focus();
+        }, 50);
+    });
+}
+
+// 自定义选择对话框 (用于播放列表选择)
+function showSelectDialog(title, options, message = '') {
+    return new Promise((resolve) => {
+        // 创建模态背景
+        const overlay = document.createElement('div');
+        overlay.className = 'modal-overlay';
+        
+        // 创建对话框
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.style.minWidth = '400px';
+        
+        // 构建选项HTML
+        const optionsHtml = options.map((option, index) => `
+            <div class="modal-option" data-index="${index}">
+                <input type="radio" name="modal-select" id="option-${index}" value="${index}">
+                <label for="option-${index}">${option}</label>
+            </div>
+        `).join('');
+        
+        modal.innerHTML = `
+            <div class="modal-title">${title}</div>
+            ${message ? `<div style="margin-bottom: 16px; color: var(--text-secondary);">${message}</div>` : ''}
+            <div class="modal-options">
+                ${optionsHtml}
+            </div>
+            <div class="modal-buttons" style="margin-top: 20px;">
+                <button class="modal-btn modal-btn-secondary" id="modal-cancel">取消</button>
+                <button class="modal-btn modal-btn-primary" id="modal-select-confirm">确定</button>
+            </div>
+        `;
+        
+        overlay.appendChild(modal);
+        document.body.appendChild(overlay);
+        
+        // 获取元素
+        const cancelBtn = modal.querySelector('#modal-cancel');
+        const confirmBtn = modal.querySelector('#modal-select-confirm');
+        const optionElements = modal.querySelectorAll('.modal-option');
+        
+        let selectedIndex = -1;
+        
+        // 关闭对话框的函数
+        const closeDialog = (result = null) => {
+            if (overlay.classList.contains('show')) {
+                overlay.classList.remove('show');
+            }
+            setTimeout(() => {
+                try {
+                    if (overlay.parentNode === document.body) {
+                        document.body.removeChild(overlay);
+                    }
+                } catch (error) {
+                    console.warn('对话框移除失败:', error);
+                }
+                resolve(result);
+            }, 300);
+        };
+        
+        // 绑定选项点击事件
+        optionElements.forEach((element, index) => {
+            const radio = element.querySelector('input[type="radio"]');
+            element.addEventListener('click', () => {
+                // 清除其他选中状态
+                optionElements.forEach(el => el.classList.remove('selected'));
+                // 设置当前选中
+                element.classList.add('selected');
+                radio.checked = true;
+                selectedIndex = index;
+            });
+        });
+        
+        // 绑定按钮事件
+        cancelBtn.addEventListener('click', () => closeDialog(null));
+        confirmBtn.addEventListener('click', () => {
+            if (selectedIndex >= 0) {
+                closeDialog(selectedIndex);
+            } else {
+                // 如果没有选择，显示提示
+                confirmBtn.textContent = '请选择一项';
+                setTimeout(() => {
+                    confirmBtn.textContent = '确定';
+                }, 1500);
+            }
+        });
+        
+        // 键盘事件
+        document.addEventListener('keydown', function keyHandler(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                if (selectedIndex >= 0) {
+                    closeDialog(selectedIndex);
+                }
+                document.removeEventListener('keydown', keyHandler);
+            } else if (e.key === 'Escape') {
+                e.preventDefault();
+                closeDialog(null);
+                document.removeEventListener('keydown', keyHandler);
+            }
+        });
+        
+        // 点击背景关闭
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+                closeDialog(null);
+            }
+        });
+        
+        // 显示对话框
+        setTimeout(() => {
+            overlay.classList.add('show');
+        }, 50);
+    });
 }
 
 // 创建加载状态
@@ -346,8 +631,12 @@ window.Utils = {
     getFileName,
     parseFilename,
     createAlbumArtPlaceholder,
+    createAlbumArtHTML,
     getGenreIcon,
     showNotification,
+    showInputDialog,
+    showConfirmDialog,
+    showSelectDialog,
     createLoadingElement,
     ColorUtils,
     SearchUtils,

@@ -324,10 +324,7 @@ class UIManager {
                 
             case 'remove-from-playlist':
                 if (context.playlist) {
-                    const confirmed = confirm('确定要从播放列表中移除这首歌吗？');
-                    if (confirmed) {
-                        window.playlistManager?.removeFromPlaylist(context.playlist, songPath);
-                    }
+                    this.handleRemoveFromPlaylist(context.playlist, songPath);
                 }
                 break;
                 
@@ -619,6 +616,30 @@ class UIManager {
         } else {
             if (sidebar) sidebar.classList.remove('mobile');
             if (mainContent) mainContent.classList.remove('mobile');
+        }
+    }
+    
+    // 处理从播放列表中移除歌曲
+    async handleRemoveFromPlaylist(playlistId, songPath) {
+        try {
+            let confirmed = false;
+            if (Utils && Utils.showConfirmDialog) {
+                confirmed = await Utils.showConfirmDialog(
+                    '移除歌曲',
+                    '确定要从播放列表中移除这首歌吗？',
+                    '移除',
+                    '取消'
+                );
+            } else {
+                confirmed = window.confirm('确定要从播放列表中移除这首歌吗？');
+            }
+            
+            if (confirmed) {
+                window.playlistManager?.removeFromPlaylist(playlistId, songPath);
+            }
+        } catch (error) {
+            console.error('移除歌曲失败:', error);
+            Utils.showNotification(`移除歌曲失败: ${error.message}`, 'error');
         }
     }
 }

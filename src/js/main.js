@@ -48,15 +48,40 @@ class MyMusicApp {
             'musicLibrary', 
             'player',
             'playlistManager',
-            'ui',
-            'keyboardShortcuts'
+            'ui'
         ];
         
+        // 可选模块（如果不存在也不会阻止应用启动）
+        const optionalModules = ['keyboardShortcuts'];
+        
+        // 初始化歌词管理器
+        if (window.LyricsManager) {
+            this.modules.lyricsManager = new LyricsManager();
+            window.lyricsManager = this.modules.lyricsManager;
+            console.log('歌词管理器初始化完成');
+        }
+        
         for (const moduleName of requiredModules) {
+            console.log(`检查模块: ${moduleName}`);
             if (!window[moduleName]) {
+                console.error(`必需的模块 ${moduleName} 未找到`);
+                console.log('当前可用的全局对象:', Object.keys(window).filter(key => 
+                    ['storage', 'musicLibrary', 'player', 'playlistManager', 'ui', 'keyboardShortcuts', 'Utils'].includes(key)
+                ));
                 throw new Error(`必需的模块 ${moduleName} 未找到`);
             }
             this.modules[moduleName] = window[moduleName];
+            console.log(`模块 ${moduleName} 加载成功`);
+        }
+        
+        // 检查可选模块
+        for (const moduleName of optionalModules) {
+            if (window[moduleName]) {
+                this.modules[moduleName] = window[moduleName];
+                console.log(`可选模块 ${moduleName} 加载成功`);
+            } else {
+                console.warn(`可选模块 ${moduleName} 未找到，跳过`);
+            }
         }
         
         // 等待音乐库初始化完成
@@ -71,7 +96,14 @@ class MyMusicApp {
         // 全局错误处理
         window.addEventListener('error', (event) => {
             console.error('全局错误:', event.error);
-            Utils.showNotification('发生了一个错误，请查看控制台', 'error');
+            console.error('错误详情:', {
+                message: event.message,
+                filename: event.filename,
+                lineno: event.lineno,
+                colno: event.colno,
+                stack: event.error?.stack
+            });
+            Utils.showNotification(`发生了一个错误: ${event.message}`, 'error');
         });
         
         // Promise 拒绝处理
@@ -257,10 +289,28 @@ class MyMusicApp {
                 throw new Error('无效的备份文件格式');
             }
             
-            const confirmed = confirm(
-                '导入数据将覆盖当前的所有数据，确定要继续吗？\n' +
-                `备份包含: ${data.library?.length || 0} 首歌曲, ${data.playlists?.length || 0} 个播放列表`
-            );
+            let confirmed = false;
+            try {
+                if (Utils && Utils.showConfirmDialog) {
+                    confirmed = await Utils.showConfirmDialog(
+                        '导入数据',
+                        `导入数据将覆盖当前的所有数据，确定要继续吗？\n备份包含: ${data.library?.length || 0} 首歌曲, ${data.playlists?.length || 0} 个播放列表`,
+                        '导入',
+                        '取消'
+                    );
+                } else {
+                    confirmed = window.confirm(
+                        '导入数据将覆盖当前的所有数据，确定要继续吗？\n' +
+                        `备份包含: ${data.library?.length || 0} 首歌曲, ${data.playlists?.length || 0} 个播放列表`
+                    );
+                }
+            } catch (error) {
+                console.error('显示确认对话框失败:', error);
+                confirmed = window.confirm(
+                    '导入数据将覆盖当前的所有数据，确定要继续吗？\n' +
+                    `备份包含: ${data.library?.length || 0} 首歌曲, ${data.playlists?.length || 0} 个播放列表`
+                );
+            }
             
             if (!confirmed) return false;
             
@@ -309,11 +359,29 @@ class MyMusicApp {
     }
     
     // 重置应用
-    resetApp() {
-        const confirmed = confirm(
-            '这将清除所有数据并重置应用到初始状态，确定要继续吗？\n' +
-            '注意: 这不会删除您的音乐文件，只会清除应用的设置和数据。'
-        );
+    async resetApp() {
+        let confirmed = false;
+        try {
+            if (Utils && Utils.showConfirmDialog) {
+                confirmed = await Utils.showConfirmDialog(
+                    '重置应用',
+                    '这将清除所有数据并重置应用到初始状态，确定要继续吗？\n注意: 这不会删除您的音乐文件，只会清除应用的设置和数据。',
+                    '重置',
+                    '取消'
+                );
+            } else {
+                confirmed = window.confirm(
+                    '这将清除所有数据并重置应用到初始状态，确定要继续吗？\n' +
+                    '注意: 这不会删除您的音乐文件，只会清除应用的设置和数据。'
+                );
+            }
+        } catch (error) {
+            console.error('显示确认对话框失败:', error);
+            confirmed = window.confirm(
+                '这将清除所有数据并重置应用到初始状态，确定要继续吗？\n' +
+                '注意: 这不会删除您的音乐文件，只会清除应用的设置和数据。'
+            );
+        }
         
         if (!confirmed) return false;
         
