@@ -390,12 +390,12 @@ class PlaylistManager {
         }
         
         // 编辑播放列表
-        const editBtn = playlistView.querySelector('.edit-playlist-btn');
-        if (editBtn) {
-            editBtn.addEventListener('click', () => {
-                this.showEditDialog(playlist.id);
-            });
-        }
+        // const editBtn = playlistView.querySelector('.edit-playlist-btn');
+        // if (editBtn) {
+        //     editBtn.addEventListener('click', () => {
+        //         this.showEditDialog(playlist.id);
+        //     });
+        // }
         
         // 歌曲双击播放
         playlistView.querySelectorAll('.music-item').forEach(item => {
