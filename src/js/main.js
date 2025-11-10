@@ -2,7 +2,7 @@
 
 class MyMusicApp {
     constructor() {
-        this.version = '1.0.0';
+        this.version = '0.1.2';
         this.isInitialized = false;
         this.modules = {};
     }

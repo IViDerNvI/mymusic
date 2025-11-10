@@ -403,3 +403,11 @@ body {
     color: var(--text-secondary);
     font-size: 14px;
 }
+
+.app-title {
+    font-size: x-large;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+    text-align: center;
+}
