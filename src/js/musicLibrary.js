@@ -239,8 +239,6 @@ class MusicLibrary {
                 lastPlayed: null,
                 rating: 0,
                 lyrics: metadata?.lyrics || null,
-                albumArt: metadata?.albumArt?.data || null,
-                albumArtFormat: metadata?.albumArt?.format || null,
                 comment: metadata?.comment || null,
                 composer: metadata?.composer || null
             };
@@ -281,18 +279,12 @@ class MusicLibrary {
                     artist: song.artist,
                     year: song.year,
                     songs: [],
-                    totalDuration: 0,
-                    albumArt: song.albumArt // 使用第一首歌的封面
+                    totalDuration: 0
                 });
             }
             const album = this.albums.get(albumKey);
             album.songs.push(song);
             album.totalDuration += song.duration || 0;
-            
-            // 如果当前专辑没有封面但这首歌有封面，则使用这首歌的封面
-            if (!album.albumArt && song.albumArt) {
-                album.albumArt = song.albumArt;
-            }
             
             // 流派统计
             if (!this.genres.has(song.genre)) {
@@ -343,9 +335,6 @@ class MusicLibrary {
         const html = this.songs.map((song, index) => `
             <div class="music-item" data-path="${song.path}" data-index="${index}">
                 <div class="music-item-index">${index + 1}</div>
-                <div class="music-item-album-art">
-                    ${Utils.createAlbumArtHTML(song)}
-                </div>
                 <div class="music-item-info">
                     <div class="music-item-title">${song.title}</div>
                     <div class="music-item-artist">${song.artist}</div>
@@ -415,10 +404,7 @@ class MusicLibrary {
         const html = albumsArray.map(album => `
             <div class="grid-item album-item" data-album="${album.title}" data-artist="${album.artist}">
                 <div class="grid-item-image">
-                    ${album.albumArt ? 
-                        `<img src="${album.albumArt}" alt="专辑封面">` :
-                        `<div class="album-art-placeholder">💿</div>`
-                    }
+                    💿
                 </div>
                 <div class="grid-item-title">${album.title}</div>
                 <div class="grid-item-subtitle">${album.artist} · ${album.songs.length} 首歌曲</div>
@@ -479,12 +465,6 @@ class MusicLibrary {
         const html = favoriteSongs.map((song, index) => `
             <div class="music-item" data-path="${song.path}" data-index="${index}">
                 <div class="music-item-index">${index + 1}</div>
-                <div class="music-item-album-art">
-                    ${song.albumArt ? 
-                        `<img src="${song.albumArt}" alt="专辑封面">` :
-                        `<div class="album-art-placeholder">${Utils.createAlbumArtPlaceholder(song.title)}</div>`
-                    }
-                </div>
                 <div class="music-item-info">
                     <div class="music-item-title">${song.title}</div>
                     <div class="music-item-artist">${song.artist}</div>
@@ -613,12 +593,6 @@ class MusicLibrary {
         const html = results.map((song, index) => `
             <div class="music-item" data-path="${song.path}" data-index="${index}">
                 <div class="music-item-index">${index + 1}</div>
-                <div class="music-item-album-art">
-                    ${song.albumArt ? 
-                        `<img src="${song.albumArt}" alt="专辑封面">` :
-                        `<div class="album-art-placeholder">${Utils.createAlbumArtPlaceholder(song.title)}</div>`
-                    }
-                </div>
                 <div class="music-item-info">
                     <div class="music-item-title">${Utils.SearchUtils.highlightMatch(song.title, query)}</div>
                     <div class="music-item-artist">${Utils.SearchUtils.highlightMatch(song.artist, query)}</div>
@@ -713,12 +687,6 @@ class MusicLibrary {
         const html = songs.map((song, index) => `
             <div class="music-item" data-path="${song.path}" data-index="${index}">
                 <div class="music-item-index">${index + 1}</div>
-                <div class="music-item-album-art">
-                    ${song.albumArt ? 
-                        `<img src="${song.albumArt}" alt="专辑封面">` :
-                        `<div class="album-art-placeholder">${Utils.createAlbumArtPlaceholder(song.title)}</div>`
-                    }
-                </div>
                 <div class="music-item-info">
                     <div class="music-item-title">${song.title}</div>
                     <div class="music-item-artist">${song.artist}</div>

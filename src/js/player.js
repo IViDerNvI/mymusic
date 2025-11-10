@@ -545,29 +545,16 @@ class MusicPlayer {
     updateSongInfo() {
         const titleElement = document.getElementById('current-title');
         const artistElement = document.getElementById('current-artist');
-        const albumArtElement = document.getElementById('current-album-art');
         
         if (this.currentSong) {
             if (titleElement) titleElement.textContent = this.currentSong.title;
             if (artistElement) artistElement.textContent = this.currentSong.artist;
-            
-            if (albumArtElement) {
-                if (this.currentSong.albumArt) {
-                    albumArtElement.src = this.currentSong.albumArt;
-                    albumArtElement.style.display = 'block';
-                } else {
-                    albumArtElement.style.display = 'none';
-                }
-            }
             
             // 加载歌词
             this.loadSongLyrics();
         } else {
             if (titleElement) titleElement.textContent = '选择一首歌曲开始播放';
             if (artistElement) artistElement.textContent = '-';
-            if (albumArtElement) {
-                albumArtElement.style.display = 'none';
-            }
             
             // 清空歌词
             if (window.lyricsManager) {

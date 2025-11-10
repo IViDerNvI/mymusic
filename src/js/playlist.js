@@ -346,12 +346,6 @@ class PlaylistManager {
                 ${songs.map((song, index) => `
                     <div class="music-item" data-path="${song.path}" data-index="${index}">
                         <div class="music-item-index">${index + 1}</div>
-                        <div class="music-item-album-art">
-                            ${song.albumArt ? 
-                                `<img src="${song.albumArt}" alt="专辑封面">` :
-                                `<div class="album-art-placeholder">${Utils.createAlbumArtPlaceholder(song.title)}</div>`
-                            }
-                        </div>
                         <div class="music-item-info">
                             <div class="music-item-title">${song.title}</div>
                             <div class="music-item-artist">${song.artist}</div>
