@@ -545,29 +545,16 @@ class MusicPlayer {
     updateSongInfo() {
         const titleElement = document.getElementById('current-title');
         const artistElement = document.getElementById('current-artist');
-        const albumArtElement = document.getElementById('current-album-art');
         
         if (this.currentSong) {
             if (titleElement) titleElement.textContent = this.currentSong.title;
             if (artistElement) artistElement.textContent = this.currentSong.artist;
-            
-            if (albumArtElement) {
-                if (this.currentSong.albumArt) {
-                    albumArtElement.src = this.currentSong.albumArt;
-                    albumArtElement.style.display = 'block';
-                } else {
-                    albumArtElement.style.display = 'none';
-                }
-            }
             
             // 加载歌词
             this.loadSongLyrics();
         } else {
             if (titleElement) titleElement.textContent = '选择一首歌曲开始播放';
             if (artistElement) artistElement.textContent = '-';
-            if (albumArtElement) {
-                albumArtElement.style.display = 'none';
-            }
             
             // 清空歌词
             if (window.lyricsManager) {
@@ -629,7 +616,7 @@ class MusicPlayer {
     updatePlayButton() {
         const playBtn = document.getElementById('play-btn');
         if (playBtn) {
-            playBtn.innerHTML = this.isPlaying ? '⏸️' : '▶️';
+            playBtn.innerHTML = this.isPlaying ? '⏸' : '▶';
             playBtn.title = this.isPlaying ? '暂停' : '播放';
         }
     }
@@ -649,17 +636,17 @@ class MusicPlayer {
             
             switch (this.repeatMode) {
                 case 'one':
-                    repeatBtn.innerHTML = '🔂';
+                    repeatBtn.innerHTML = '<img src="public/repeat.1.png" alt="单曲循环" title="单曲循环">';
                     repeatBtn.classList.add('active');
                     repeatBtn.title = '单曲循环';
                     break;
                 case 'all':
-                    repeatBtn.innerHTML = '🔁';
+                    repeatBtn.innerHTML = '<img src="public/repeat.png" alt="列表循环" title="列表循环">';
                     repeatBtn.classList.add('active');
                     repeatBtn.title = '列表循环';
                     break;
                 default:
-                    repeatBtn.innerHTML = '🔁';
+                    repeatBtn.innerHTML = '<img src="public/repeat.png" alt="循环" title="循环">';
                     repeatBtn.title = '开启循环播放';
                     break;
             }
@@ -671,7 +658,7 @@ class MusicPlayer {
         if (favoriteBtn && this.currentSong) {
             const isFavorite = storage.isFavorite(this.currentSong.path);
             favoriteBtn.classList.toggle('active', isFavorite);
-            favoriteBtn.innerHTML = isFavorite ? '❤️' : '🤍';
+            favoriteBtn.innerHTML = isFavorite ? '<img src="public/heart.fill.png" alt="收藏">' : '<img src="public/heart.png" alt="未收藏">';
             favoriteBtn.title = isFavorite ? '取消收藏' : '收藏';
         }
     }
@@ -686,13 +673,9 @@ class MusicPlayer {
         
         if (volumeBtn) {
             if (this.volume === 0) {
-                volumeBtn.innerHTML = '🔇';
-            } else if (this.volume < 0.3) {
-                volumeBtn.innerHTML = '🔈';
-            } else if (this.volume < 0.7) {
-                volumeBtn.innerHTML = '🔉';
+                volumeBtn.innerHTML = '<img src="public/bell.slash.png" alt="静音" title="静音">';
             } else {
-                volumeBtn.innerHTML = '🔊';
+                volumeBtn.innerHTML = '<img src="public/bell.png" alt="音量" title="音量">';
             }
         }
     }

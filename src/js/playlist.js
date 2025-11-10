@@ -322,7 +322,6 @@ class PlaylistManager {
                 <div class="view-controls">
                     <button class="btn btn-primary play-all-btn">播放全部</button>
                     <button class="btn btn-secondary shuffle-play-btn">随机播放</button>
-                    <button class="btn btn-icon edit-playlist-btn" title="编辑播放列表">✏️</button>
                 </div>
             </div>
             
@@ -346,12 +345,6 @@ class PlaylistManager {
                 ${songs.map((song, index) => `
                     <div class="music-item" data-path="${song.path}" data-index="${index}">
                         <div class="music-item-index">${index + 1}</div>
-                        <div class="music-item-album-art">
-                            ${song.albumArt ? 
-                                `<img src="${song.albumArt}" alt="专辑封面">` :
-                                `<div class="album-art-placeholder">${Utils.createAlbumArtPlaceholder(song.title)}</div>`
-                            }
-                        </div>
                         <div class="music-item-info">
                             <div class="music-item-title">${song.title}</div>
                             <div class="music-item-artist">${song.artist}</div>
@@ -359,10 +352,6 @@ class PlaylistManager {
                         <div class="music-item-album">${song.album}</div>
                         <div class="music-item-duration">${Utils.formatTime(song.duration)}</div>
                         <div class="music-item-actions">
-                            <button class="btn btn-icon favorite-btn ${storage.isFavorite(song.path) ? 'active' : ''}" 
-                                    data-path="${song.path}" title="收藏">
-                                ${storage.isFavorite(song.path) ? '❤️' : '🤍'}
-                            </button>
                             <button class="btn btn-icon remove-from-playlist-btn" 
                                     data-path="${song.path}" data-playlist-id="${playlistId}" title="从播放列表移除">🗑️</button>
                         </div>
@@ -402,27 +391,6 @@ class PlaylistManager {
             item.addEventListener('dblclick', (e) => {
                 const index = parseInt(e.currentTarget.dataset.index);
                 this.playPlaylist(playlist.id, false, index);
-            });
-        });
-        
-        // 收藏按钮
-        playlistView.querySelectorAll('.favorite-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const path = btn.dataset.path;
-                const result = storage.toggleFavorite(path);
-                
-                if (result === 'added') {
-                    btn.classList.add('active');
-                    btn.innerHTML = '❤️';
-                    btn.title = '取消收藏';
-                    Utils.showNotification('已添加到收藏', 'success');
-                } else if (result === 'removed') {
-                    btn.classList.remove('active');
-                    btn.innerHTML = '🤍';
-                    btn.title = '收藏';
-                    Utils.showNotification('已从收藏中移除', 'info');
-                }
             });
         });
         

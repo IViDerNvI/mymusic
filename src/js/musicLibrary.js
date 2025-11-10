@@ -239,8 +239,6 @@ class MusicLibrary {
                 lastPlayed: null,
                 rating: 0,
                 lyrics: metadata?.lyrics || null,
-                albumArt: metadata?.albumArt?.data || null,
-                albumArtFormat: metadata?.albumArt?.format || null,
                 comment: metadata?.comment || null,
                 composer: metadata?.composer || null
             };
@@ -281,18 +279,12 @@ class MusicLibrary {
                     artist: song.artist,
                     year: song.year,
                     songs: [],
-                    totalDuration: 0,
-                    albumArt: song.albumArt // 使用第一首歌的封面
+                    totalDuration: 0
                 });
             }
             const album = this.albums.get(albumKey);
             album.songs.push(song);
             album.totalDuration += song.duration || 0;
-            
-            // 如果当前专辑没有封面但这首歌有封面，则使用这首歌的封面
-            if (!album.albumArt && song.albumArt) {
-                album.albumArt = song.albumArt;
-            }
             
             // 流派统计
             if (!this.genres.has(song.genre)) {
@@ -343,9 +335,6 @@ class MusicLibrary {
         const html = this.songs.map((song, index) => `
             <div class="music-item" data-path="${song.path}" data-index="${index}">
                 <div class="music-item-index">${index + 1}</div>
-                <div class="music-item-album-art">
-                    ${Utils.createAlbumArtHTML(song)}
-                </div>
                 <div class="music-item-info">
                     <div class="music-item-title">${song.title}</div>
                     <div class="music-item-artist">${song.artist}</div>
@@ -353,10 +342,6 @@ class MusicLibrary {
                 <div class="music-item-album">${song.album}</div>
                 <div class="music-item-duration">${Utils.formatTime(song.duration)}</div>
                 <div class="music-item-actions">
-                    <button class="btn btn-icon favorite-btn ${storage.isFavorite(song.path) ? 'active' : ''}" 
-                            data-path="${song.path}" title="收藏">
-                        ${storage.isFavorite(song.path) ? '❤️' : '🤍'}
-                    </button>
                     <button class="btn btn-icon more-btn" data-path="${song.path}" title="更多">⋯</button>
                 </div>
             </div>
@@ -415,10 +400,7 @@ class MusicLibrary {
         const html = albumsArray.map(album => `
             <div class="grid-item album-item" data-album="${album.title}" data-artist="${album.artist}">
                 <div class="grid-item-image">
-                    ${album.albumArt ? 
-                        `<img src="${album.albumArt}" alt="专辑封面">` :
-                        `<div class="album-art-placeholder">💿</div>`
-                    }
+                    💿
                 </div>
                 <div class="grid-item-title">${album.title}</div>
                 <div class="grid-item-subtitle">${album.artist} · ${album.songs.length} 首歌曲</div>
@@ -468,7 +450,7 @@ class MusicLibrary {
         if (favoriteSongs.length === 0) {
             container.innerHTML = `
                 <div class="empty-state">
-                    <div class="empty-icon">❤️</div>
+                    <div class="empty-icon"><img src="public/heart.fill.png" alt="收藏"></div>
                     <h3>暂无收藏</h3>
                     <p>点击歌曲旁边的心形图标来收藏喜欢的歌曲</p>
                 </div>
@@ -479,12 +461,6 @@ class MusicLibrary {
         const html = favoriteSongs.map((song, index) => `
             <div class="music-item" data-path="${song.path}" data-index="${index}">
                 <div class="music-item-index">${index + 1}</div>
-                <div class="music-item-album-art">
-                    ${song.albumArt ? 
-                        `<img src="${song.albumArt}" alt="专辑封面">` :
-                        `<div class="album-art-placeholder">${Utils.createAlbumArtPlaceholder(song.title)}</div>`
-                    }
-                </div>
                 <div class="music-item-info">
                     <div class="music-item-title">${song.title}</div>
                     <div class="music-item-artist">${song.artist}</div>
@@ -492,8 +468,6 @@ class MusicLibrary {
                 <div class="music-item-album">${song.album}</div>
                 <div class="music-item-duration">${Utils.formatTime(song.duration)}</div>
                 <div class="music-item-actions">
-                    <button class="btn btn-icon favorite-btn active" 
-                            data-path="${song.path}" title="取消收藏">❤️</button>
                     <button class="btn btn-icon more-btn" data-path="${song.path}" title="更多">⋯</button>
                 </div>
             </div>
@@ -510,32 +484,6 @@ class MusicLibrary {
                 const path = e.currentTarget.dataset.path;
                 const index = parseInt(e.currentTarget.dataset.index);
                 window.player?.playByPath(path, this.songs, index);
-            });
-        });
-        
-        // 收藏按钮
-        container.querySelectorAll('.favorite-btn').forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const path = btn.dataset.path;
-                const result = storage.toggleFavorite(path);
-                
-                if (result === 'added') {
-                    btn.classList.add('active');
-                    btn.innerHTML = '❤️';
-                    btn.title = '取消收藏';
-                    Utils.showNotification('已添加到收藏', 'success');
-                } else if (result === 'removed') {
-                    btn.classList.remove('active');
-                    btn.innerHTML = '🤍';
-                    btn.title = '收藏';
-                    Utils.showNotification('已从收藏中移除', 'info');
-                }
-                
-                // 如果在收藏视图，需要刷新
-                if (document.getElementById('favorites-view').classList.contains('active')) {
-                    this.updateFavoritesView();
-                }
             });
         });
         
@@ -613,12 +561,6 @@ class MusicLibrary {
         const html = results.map((song, index) => `
             <div class="music-item" data-path="${song.path}" data-index="${index}">
                 <div class="music-item-index">${index + 1}</div>
-                <div class="music-item-album-art">
-                    ${song.albumArt ? 
-                        `<img src="${song.albumArt}" alt="专辑封面">` :
-                        `<div class="album-art-placeholder">${Utils.createAlbumArtPlaceholder(song.title)}</div>`
-                    }
-                </div>
                 <div class="music-item-info">
                     <div class="music-item-title">${Utils.SearchUtils.highlightMatch(song.title, query)}</div>
                     <div class="music-item-artist">${Utils.SearchUtils.highlightMatch(song.artist, query)}</div>
@@ -626,10 +568,6 @@ class MusicLibrary {
                 <div class="music-item-album">${Utils.SearchUtils.highlightMatch(song.album, query)}</div>
                 <div class="music-item-duration">${Utils.formatTime(song.duration)}</div>
                 <div class="music-item-actions">
-                    <button class="btn btn-icon favorite-btn ${storage.isFavorite(song.path) ? 'active' : ''}" 
-                            data-path="${song.path}" title="收藏">
-                        ${storage.isFavorite(song.path) ? '❤️' : '🤍'}
-                    </button>
                     <button class="btn btn-icon more-btn" data-path="${song.path}" title="更多">⋯</button>
                 </div>
             </div>
@@ -713,12 +651,6 @@ class MusicLibrary {
         const html = songs.map((song, index) => `
             <div class="music-item" data-path="${song.path}" data-index="${index}">
                 <div class="music-item-index">${index + 1}</div>
-                <div class="music-item-album-art">
-                    ${song.albumArt ? 
-                        `<img src="${song.albumArt}" alt="专辑封面">` :
-                        `<div class="album-art-placeholder">${Utils.createAlbumArtPlaceholder(song.title)}</div>`
-                    }
-                </div>
                 <div class="music-item-info">
                     <div class="music-item-title">${song.title}</div>
                     <div class="music-item-artist">${song.artist}</div>
@@ -726,10 +658,6 @@ class MusicLibrary {
                 <div class="music-item-album">${song.album}</div>
                 <div class="music-item-duration">${Utils.formatTime(song.duration)}</div>
                 <div class="music-item-actions">
-                    <button class="btn btn-icon favorite-btn ${storage.isFavorite(song.path) ? 'active' : ''}" 
-                            data-path="${song.path}" title="收藏">
-                        ${storage.isFavorite(song.path) ? '❤️' : '🤍'}
-                    </button>
                     <button class="btn btn-icon more-btn" data-path="${song.path}" title="更多">⋯</button>
                 </div>
             </div>

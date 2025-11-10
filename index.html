@@ -15,25 +15,26 @@
         <!-- 侧边栏 -->
         <div class="sidebar">
             <div class="sidebar-header">
-                <h1 class="app-title">🎵 MyMusic</h1>
+                <span>&nbsp;</span>
             </div>
             
             <nav class="sidebar-nav">
+                <div class="app-title">Mymusic</div>
                 <div class="nav-section">
                     <h3>音乐库</h3>
                     <ul>
-                        <li><a href="#" data-view="library" class="nav-link active">🎵 所有歌曲</a></li>
-                        <li><a href="#" data-view="artists" class="nav-link">👤 艺术家</a></li>
-                        <li><a href="#" data-view="albums" class="nav-link">💿 专辑</a></li>
-                        <li><a href="#" data-view="genres" class="nav-link">🎭 流派</a></li>
-                        <li><a href="#" data-view="favorites" class="nav-link">❤️ 我的收藏</a></li>
+                        <li><a href="#" data-view="library" class="nav-link active">所有歌曲</a></li>
+                        <li><a href="#" data-view="artists" class="nav-link">艺术家</a></li>
+                        <li><a href="#" data-view="albums" class="nav-link">专辑</a></li>
+                        <li><a href="#" data-view="genres" class="nav-link">流派</a></li>
+                        <li><a href="#" data-view="favorites" class="nav-link">我的收藏</a></li>
                     </ul>
                 </div>
                 
                 <div class="nav-section">
                     <h3>播放列表</h3>
                     <ul id="playlist-nav">
-                        <li><a href="#" id="create-playlist" class="nav-link">➕ 创建播放列表</a></li>
+                        <li><a href="#" id="create-playlist" class="nav-link">创建播放列表</a></li>
                     </ul>
                 </div>
             </nav>
@@ -45,13 +46,17 @@
             <header class="top-bar">
                 <div class="search-container">
                     <input type="text" id="search-input" placeholder="搜索歌曲、艺术家、专辑..." class="search-input">
-                    <button class="search-btn">🔍</button>
+                    <button class="search-btn">
+                        <img src="public/magnifyingglass.png" alt="搜索" title="搜索">
+                    </button>
                 </div>
                 
                 <div class="top-controls">
                     <button id="import-files" class="btn btn-secondary">导入文件</button>
                     <button id="import-folder" class="btn btn-secondary">导入文件夹</button>
-                    <button id="settings-btn" class="btn btn-icon">⚙️</button>
+                    <button id="settings-btn" class="btn btn-icon">
+                        <img src="public/settings.png" alt="设置" title="设置">
+                    </button>
                 </div>
             </header>
 
@@ -69,13 +74,11 @@
                                 <option value="duration">按时长排序</option>
                                 <option value="dateAdded">按添加时间排序</option>
                             </select>
-                            <button id="view-toggle" class="btn btn-icon">📋</button>
                         </div>
                     </div>
                     
                     <div class="music-list" id="music-list">
                         <div class="empty-state">
-                            <div class="empty-icon">🎵</div>
                             <h3>音乐库为空</h3>
                             <p>点击"导入文件"或"导入文件夹"来添加音乐</p>
                         </div>
@@ -112,23 +115,30 @@
     <!-- 播放器控制栏 -->
     <div class="player-bar">
         <div class="player-info">
-            <div class="album-art">
-                <img id="current-album-art" src="" alt="专辑封面">
-            </div>
             <div class="song-info">
                 <div class="song-title" id="current-title">选择一首歌曲开始播放</div>
                 <div class="song-artist" id="current-artist">-</div>
             </div>
-            <button id="favorite-btn" class="btn btn-icon">🤍</button>
+            <button id="favorite-btn" class="btn btn-icon"><img src="public/heart.png" alt="未收藏"></button>
         </div>
 
         <div class="player-controls">
             <div class="control-buttons">
-                <button id="shuffle-btn" class="btn btn-icon">🔀</button>
-                <button id="prev-btn" class="btn btn-icon">⏮️</button>
-                <button id="play-btn" class="btn btn-icon btn-play">▶️</button>
-                <button id="next-btn" class="btn btn-icon">⏭️</button>
-                <button id="repeat-btn" class="btn btn-icon">🔁</button>
+                <button id="shuffle-btn" class="btn btn-icon">
+                    <img src="public/shuffle.png" alt="随机播放" title="随机播放">
+                </button>
+                <button id="prev-btn" class="btn btn-icon">
+                    <img src="public/backward.png" alt="上一首" title="上一首">
+                </button>
+                <button id="play-btn" class="btn btn-icon btn-play">
+                    <img src="public/play.png" alt="播放" title="播放">
+                </button>
+                <button id="next-btn" class="btn btn-icon">
+                    <img src="public/forward.png" alt="下一首" title="下一首">
+                </button>
+                <button id="repeat-btn" class="btn btn-icon">
+                    <img src="public/repeat.png" alt="重复播放" title="重复播放">
+                </button>
             </div>
             
             <div class="progress-container">
@@ -144,10 +154,16 @@
         </div>
 
         <div class="player-extras">
-            <button id="lyrics-btn" class="btn btn-icon">📝</button>
-            <button id="equalizer-btn" class="btn btn-icon">🎛️</button>
+            <button id="lyrics-btn" class="btn btn-icon">
+                <img src="public/lyrics.png" alt="歌词" title="歌词">
+            </button>
+            <button id="equalizer-btn" class="btn btn-icon">
+                <img src="public/equalizer.png" alt="均衡器" title="均衡器">
+            </button>
             <div class="volume-control">
-                <button id="volume-btn" class="btn btn-icon">🔊</button>
+                <button id="volume-btn" class="btn btn-icon">
+                    <img src="public/bell.png" alt="音量" title="音量">
+                </button>
                 <div class="volume-slider">
                     <input type="range" id="volume-range" min="0" max="100" value="50">
                 </div>

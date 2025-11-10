@@ -372,17 +372,6 @@ ipcMain.handle('read-music-metadata', async (event, filePath) => {
     // 使用 music-metadata 库读取元数据
     const metadata = await mm.parseFile(filePath)
     
-    // 提取封面图片
-    let albumArt = null
-    if (metadata.common.picture && metadata.common.picture.length > 0) {
-      const picture = metadata.common.picture[0]
-      // 将图片数据转换为 base64
-      albumArt = {
-        format: picture.format,
-        data: `data:${picture.format};base64,${picture.data.toString('base64')}`
-      }
-    }
-    
     // 格式化持续时间（秒）
     const duration = metadata.format.duration || 0
     
@@ -405,7 +394,6 @@ ipcMain.handle('read-music-metadata', async (event, filePath) => {
         sampleRate: metadata.format.sampleRate || null,
         codec: metadata.format.codec || null,
         container: metadata.format.container || null,
-        albumArt: albumArt,
         comment: metadata.common.comment ? metadata.common.comment[0] : null,
         composer: metadata.common.composer ? metadata.common.composer[0] : null,
         lyrics: metadata.common.lyrics ? metadata.common.lyrics[0] : null
