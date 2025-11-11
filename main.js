@@ -1,38 +1,56 @@
+/**
+ * MyMusic Electron 主进程
+ * 负责创建窗口、处理文件操作、菜单管理等桌面应用功能
+ */
+
+// 导入 Electron 核心模块
 const { app, BrowserWindow, ipcMain, dialog, Menu } = require('electron')
 const path = require('path')
 const fs = require('fs')
 const https = require('https')
 const http = require('http')
-const mm = require('music-metadata')
-const NodeID3 = require('node-id3')
+// 导入第三方依赖
+const mm = require('music-metadata')    // 音乐元数据解析库
+const NodeID3 = require('node-id3')     // ID3 标签处理库
 
+// 全局窗口引用
 let mainWindow
 
+/**
+ * 创建主应用窗口
+ * 设置窗口参数、安全策略和预加载脚本
+ */
 const createWindow = () => {
   mainWindow = new BrowserWindow({
+    // 窗口尺寸设置
     width: 1200,
     height: 800,
     minWidth: 1000,
     minHeight: 700,
+    
+    // 安全和渲染设置
     webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
-      preload: path.join(__dirname, 'preload.js'),
-      webSecurity: false // 允许本地文件访问
+      nodeIntegration: false,           // 禁用 Node.js 集成（安全考虑）
+      contextIsolation: true,           // 启用上下文隔离（安全考虑）
+      preload: path.join(__dirname, 'preload.js'),  // 预加载脚本
+      webSecurity: false                // 允许本地文件访问（开发需要）
     },
-    icon: path.join(__dirname, 'assets/icons/app.png'),
-    titleBarStyle: 'hiddenInset',
-    show: false
+    
+    // 外观设置
+    icon: path.join(__dirname, 'assets/icons/app.png'),  // 应用图标
+    titleBarStyle: 'hiddenInset',       // 隐藏标题栏样式
+    show: false                         // 初始时隐藏，等待内容加载完成
   })
 
+  // 加载主页面
   mainWindow.loadFile('index.html')
   
-  // 窗口准备完成后显示
+  // 窗口内容准备完成后显示（避免白屏闪烁）
   mainWindow.once('ready-to-show', () => {
     mainWindow.show()
   })
 
-  // 开发模式下打开开发者工具
+  // 开发模式下自动打开开发者工具
   if (process.argv.includes('--dev')) {
     mainWindow.webContents.openDevTools()
   }
@@ -123,6 +141,8 @@ const createMenu = () => {
 app.whenReady().then(() => {
   createWindow()
   createMenu()
+
+  app.setAsDefaultProtocolClient('mymusic');
 })
 
 app.on('window-all-closed', () => {
