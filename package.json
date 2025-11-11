@@ -1,6 +1,6 @@
 {
   "name": "mymusic",
-  "version": "0.1.4",
+  "version": "0.1.6",
   "description": "本地音乐播放器 - Electron应用",
   "main": "main.js",
   "scripts": {
@@ -25,6 +25,10 @@
   "build": {
     "appId": "com.ividernvi.mymusic",
     "productName": "MyMusic",
+    "protocols": {
+      "name": "mymusic",
+      "schemes": ["mymusic"]
+    },
     "linux": {
       "target": ["AppImage"],       
       "category": "AudioVideo"       
