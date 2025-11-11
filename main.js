@@ -39,7 +39,7 @@ const createWindow = () => {
     },
     
     // 外观设置
-    icon: path.join(__dirname, 'assets/icons/app.png'),  // 应用图标
+    icon: path.join(__dirname, 'public/icons.png'),  // 应用图标
     titleBarStyle: 'hiddenInset',       // 隐藏标题栏样式
     show: false                         // 初始时隐藏，等待内容加载完成
   })

@@ -114,29 +114,55 @@ class MyMusicApp {
      */
     async handleProtocolUrl(url) {
         try {
-            const parsedUrl = new URL(url);
-            const params = new URLSearchParams(parsedUrl.search);
+            console.log('开始处理协议URL:', url);
             
-            const action = parsedUrl.pathname.replace('/', '');
+            const parsedUrl = new URL(url);
+            console.log('解析后的URL对象:', {
+                protocol: parsedUrl.protocol,
+                hostname: parsedUrl.hostname,
+                pathname: parsedUrl.pathname,
+                search: parsedUrl.search
+            });
+            
+            const params = new URLSearchParams(parsedUrl.search);
+            console.log('搜索参数:', Array.from(params.entries()));
+            
+            // 修复路径解析逻辑
+            let action = parsedUrl.pathname;
+            if (action.startsWith('/')) {
+                action = action.substring(1);
+            }
+            
+            // 处理某些情况下hostname可能包含action的情况
+            if (!action && parsedUrl.hostname) {
+                action = parsedUrl.hostname;
+            }
+            
+            console.log('提取的操作:', action);
             
             if (action === 'play') {
                 const title = params.get('title');
                 const artist = params.get('artist');
                 const path = params.get('path');
                 
+                console.log('参数解析结果:', { title, artist, path });
+                
                 if (path) {
                     // 直接通过路径播放
+                    console.log('通过路径播放:', path);
                     await this.playByPath(decodeURIComponent(path));
                 } else if (title) {
                     // 通过标题和艺术家搜索播放
-                    await this.playByTitleAndArtist(
-                        decodeURIComponent(title), 
-                        artist ? decodeURIComponent(artist) : ''
-                    );
+                    const decodedTitle = decodeURIComponent(title);
+                    const decodedArtist = artist ? decodeURIComponent(artist) : '';
+                    console.log('通过标题和艺术家播放:', { decodedTitle, decodedArtist });
+                    await this.playByTitleAndArtist(decodedTitle, decodedArtist);
                 } else {
+                    console.error('缺少必要参数');
                     Utils.showNotification('协议URL格式错误：缺少必要参数', 'error');
                 }
             } else {
+                console.error('不支持的协议操作:', action);
                 Utils.showNotification('不支持的协议操作：' + action, 'error');
             }
         } catch (error) {
