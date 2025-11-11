@@ -1,6 +1,6 @@
 {
   "name": "mymusic",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "本地音乐播放器 - Electron应用",
   "main": "main.js",
   "scripts": {
