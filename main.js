@@ -15,6 +15,8 @@ const NodeID3 = require('node-id3')     // ID3 标签处理库
 
 // 全局窗口引用
 let mainWindow
+// 保存待处理的协议URL（当应用启动时收到协议调用）
+let pendingProtocolUrl = null
 
 /**
  * 创建主应用窗口
@@ -138,12 +140,83 @@ const createMenu = () => {
   Menu.setApplicationMenu(menu)
 }
 
-app.whenReady().then(() => {
-  createWindow()
-  createMenu()
+/**
+ * 处理协议URL打开事件
+ */
+function handleProtocolUrl(url) {
+  console.log('接收到协议URL:', url);
+  
+  if (mainWindow && mainWindow.webContents) {
+    // 确保窗口可见并聚焦
+    if (mainWindow.isMinimized()) {
+      mainWindow.restore();
+    }
+    mainWindow.focus();
+    
+    // 发送协议URL到渲染进程
+    mainWindow.webContents.send('protocol-open', url);
+  } else {
+    // 如果窗口还没准备好，暂存URL
+    pendingProtocolUrl = url;
+  }
+}
 
-  app.setAsDefaultProtocolClient('mymusic');
-})
+// 确保只有一个应用实例运行
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  // 如果已经有实例在运行，退出当前实例
+  app.quit();
+} else {
+  // 当尝试启动第二个实例时，将协议URL转发给第一个实例
+  app.on('second-instance', (event, commandLine, workingDirectory) => {
+    console.log('检测到第二个实例启动，命令行参数:', commandLine);
+    
+    // 查找协议URL
+    const protocolUrl = commandLine.find(arg => arg.startsWith('mymusic://'));
+    if (protocolUrl) {
+      handleProtocolUrl(protocolUrl);
+    }
+  });
+
+  // macOS: 通过协议打开应用
+  app.on('open-url', (event, url) => {
+    event.preventDefault();
+    console.log('macOS协议打开:', url);
+    handleProtocolUrl(url);
+  });
+
+  app.whenReady().then(() => {
+    createWindow()
+    createMenu()
+
+    // 注册自定义协议
+    try {
+      app.setAsDefaultProtocolClient('mymusic');
+      console.log('成功注册自定义协议: mymusic://');
+    } catch (error) {
+      console.error('注册协议失败:', error);
+    }
+
+    // 检查启动参数中是否有协议URL（Windows/Linux）
+    const args = process.argv.slice(1);
+    const protocolUrl = args.find(arg => arg.startsWith('mymusic://'));
+    if (protocolUrl) {
+      console.log('启动时检测到协议URL:', protocolUrl);
+      pendingProtocolUrl = protocolUrl;
+    }
+
+    // 窗口加载完成后处理待处理的URL
+    mainWindow.webContents.once('did-finish-load', () => {
+      if (pendingProtocolUrl) {
+        setTimeout(() => {
+          handleProtocolUrl(pendingProtocolUrl);
+          pendingProtocolUrl = null;
+        }, 1000); // 延迟1秒确保渲染进程准备就绪
+      }
+    });
+  })
+}
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
