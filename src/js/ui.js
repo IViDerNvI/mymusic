@@ -72,6 +72,13 @@ class UIManager {
             closeSettingsBtn.addEventListener('click', () => this.togglePanel('settings'));
         }
         
+        // 分享按钮
+        const shareBtn = document.getElementById('share-btn');
+        
+        if (shareBtn) {
+            shareBtn.addEventListener('click', () => this.shareCurrentSong());
+        }
+        
         // 均衡器预设
         document.querySelectorAll('.eq-preset').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -707,6 +714,220 @@ class UIManager {
             console.error('移除歌曲失败:', error);
             Utils.showNotification(`移除歌曲失败: ${error.message}`, 'error');
         }
+    }
+    
+    /**
+     * 分享当前播放的歌曲
+     * 生成自定义协议链接并复制到剪贴板
+     */
+    async shareCurrentSong() {
+        try {
+            // 检查是否有正在播放的歌曲
+            if (!window.player || !window.player.currentSong) {
+                Utils.showNotification('没有正在播放的歌曲', 'info');
+                return;
+            }
+            
+            const song = window.player.currentSong;
+            
+            // 构建分享链接
+            const shareUrl = this.generateShareUrl(song);
+            
+            if (!shareUrl) {
+                Utils.showNotification('无法生成分享链接：缺少必要信息', 'error');
+                return;
+            }
+            
+            // 复制到剪贴板
+            if (navigator.clipboard && window.isSecureContext) {
+                // 使用新的Clipboard API
+                await navigator.clipboard.writeText(shareUrl);
+                Utils.showNotification(`分享链接已复制到剪贴板\n${shareUrl}`, 'success');
+            } else {
+                // 降级到传统方法
+                const textArea = document.createElement('textarea');
+                textArea.value = shareUrl;
+                textArea.style.position = 'fixed';
+                textArea.style.opacity = '0';
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    Utils.showNotification(`分享链接已复制到剪贴板\n${shareUrl}`, 'success');
+                } catch (error) {
+                    console.error('复制失败:', error);
+                    Utils.showNotification('复制分享链接失败，请手动复制：\n' + shareUrl, 'error');
+                } finally {
+                    document.body.removeChild(textArea);
+                }
+            }
+            
+            // 显示分享对话框（可选）
+            this.showShareDialog(shareUrl);
+            
+        } catch (error) {
+            console.error('分享歌曲失败:', error);
+            Utils.showNotification('分享歌曲失败：' + error.message, 'error');
+        }
+    }
+    
+    /**
+     * 生成分享URL
+     * @param {Object} song - 歌曲对象
+     * @returns {string|null} - 分享URL
+     */
+    generateShareUrl(song) {
+        if (!song) return null;
+        
+        const params = new URLSearchParams();
+        
+        // 优先使用标题和艺术家
+        if (song.title) {
+            params.append('title', song.title);
+        }
+        
+        if (song.artist) {
+            params.append('artist', song.artist);
+        }
+        
+        // 如果没有标题信息，使用文件路径
+        if (!song.title && song.path) {
+            params.append('path', song.path);
+        }
+        
+        // 检查是否有足够信息生成链接
+        if (!params.has('title') && !params.has('path')) {
+            return null;
+        }
+        
+        return `mymusic://play?${params.toString()}`;
+    }
+    
+    /**
+     * 显示分享对话框
+     * @param {string} shareUrl - 分享URL
+     */
+    showShareDialog(shareUrl) {
+        // 创建分享对话框
+        const dialog = document.createElement('div');
+        dialog.className = 'share-dialog';
+        dialog.innerHTML = `
+            <div class="share-dialog-content">
+                <h3>分享音乐</h3>
+                <p>复制下面的链接，分享给朋友：</p>
+                <div class="share-url-container">
+                    <input type="text" class="share-url-input" value="${shareUrl}" readonly>
+                    <button class="share-copy-btn" title="复制链接">📋</button>
+                </div>
+                <div class="share-dialog-actions">
+                    <button class="share-close-btn">关闭</button>
+                </div>
+            </div>
+        `;
+        
+        // 添加样式
+        dialog.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+        `;
+        
+        const content = dialog.querySelector('.share-dialog-content');
+        content.style.cssText = `
+            background: var(--background-color, #fff);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 90%;
+            color: var(--text-color, #333);
+        `;
+        
+        const urlContainer = dialog.querySelector('.share-url-container');
+        urlContainer.style.cssText = `
+            display: flex;
+            margin: 15px 0;
+            border: 1px solid var(--border-color, #ddd);
+            border-radius: 5px;
+            overflow: hidden;
+        `;
+        
+        const urlInput = dialog.querySelector('.share-url-input');
+        urlInput.style.cssText = `
+            flex: 1;
+            padding: 10px;
+            border: none;
+            background: var(--input-background, #f9f9f9);
+            color: var(--text-color, #333);
+            font-family: monospace;
+            font-size: 14px;
+        `;
+        
+        const copyBtn = dialog.querySelector('.share-copy-btn');
+        copyBtn.style.cssText = `
+            padding: 10px;
+            border: none;
+            background: var(--primary-color, #007bff);
+            color: white;
+            cursor: pointer;
+        `;
+        
+        const actions = dialog.querySelector('.share-dialog-actions');
+        actions.style.cssText = `
+            text-align: right;
+            margin-top: 15px;
+        `;
+        
+        const closeBtn = dialog.querySelector('.share-close-btn');
+        closeBtn.style.cssText = `
+            padding: 8px 16px;
+            border: 1px solid var(--border-color, #ddd);
+            background: var(--background-color, #fff);
+            color: var(--text-color, #333);
+            border-radius: 5px;
+            cursor: pointer;
+        `;
+        
+        // 事件绑定
+        copyBtn.addEventListener('click', async () => {
+            try {
+                await navigator.clipboard.writeText(shareUrl);
+                copyBtn.textContent = '✅';
+                setTimeout(() => {
+                    copyBtn.textContent = '📋';
+                }, 2000);
+            } catch (error) {
+                urlInput.select();
+                document.execCommand('copy');
+                copyBtn.textContent = '✅';
+                setTimeout(() => {
+                    copyBtn.textContent = '📋';
+                }, 2000);
+            }
+        });
+        
+        closeBtn.addEventListener('click', () => {
+            document.body.removeChild(dialog);
+        });
+        
+        dialog.addEventListener('click', (e) => {
+            if (e.target === dialog) {
+                document.body.removeChild(dialog);
+            }
+        });
+        
+        // 添加到页面
+        document.body.appendChild(dialog);
+        
+        // 自动选择URL文本
+        urlInput.select();
     }
 }
 

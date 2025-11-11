@@ -271,7 +271,7 @@ body {
 }
 
 .music-item.playing .music-item-index::before {
-    content: "▶️";
+    content: "▶";
     font-size: 12px;
 }
 

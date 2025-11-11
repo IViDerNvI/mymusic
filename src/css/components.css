@@ -91,6 +91,22 @@
     color: white;
 }
 
+/* 分享按钮特殊样式 */
+#share-btn {
+    font-size: 16px;
+    transition: all 0.2s ease;
+}
+
+#share-btn:hover {
+    background: var(--accent-color);
+    color: white;
+    transform: scale(1.1);
+}
+
+#share-btn:active {
+    transform: scale(0.95);
+}
+
 /* 进度条 */
 .progress-container {
     display: flex;

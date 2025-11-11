@@ -20,6 +20,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onMenuPrevious: (callback) => ipcRenderer.on('menu-previous', callback),
   onMenuNext: (callback) => ipcRenderer.on('menu-next', callback),
   
+  // 协议打开事件监听
+  onProtocolOpen: (callback) => ipcRenderer.on('protocol-open', callback),
+  
   // 移除监听器
   removeAllListeners: (channel) => ipcRenderer.removeAllListeners(channel)
 })

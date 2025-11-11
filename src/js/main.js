@@ -30,6 +30,9 @@ class MyMusicApp {
             this.isInitialized = true;
             console.log('🎵 MyMusic 启动完成!');
             
+            // 设置协议处理
+            this.setupProtocolHandler();
+            
             // 显示欢迎消息
             this.showWelcomeMessage();
             
@@ -90,6 +93,101 @@ class MyMusicApp {
         }
         
         console.log('所有模块初始化完成');
+    }
+    
+    /**
+     * 设置协议处理器
+     */
+    setupProtocolHandler() {
+        if (window.electronAPI && window.electronAPI.onProtocolOpen) {
+            window.electronAPI.onProtocolOpen((event, url) => {
+                console.log('收到协议URL:', url);
+                this.handleProtocolUrl(url);
+            });
+            console.log('协议处理器已设置');
+        }
+    }
+    
+    /**
+     * 处理协议URL
+     * 支持格式: mymusic://play?title=歌曲名&artist=艺术家名
+     */
+    async handleProtocolUrl(url) {
+        try {
+            const parsedUrl = new URL(url);
+            const params = new URLSearchParams(parsedUrl.search);
+            
+            const action = parsedUrl.pathname.replace('/', '');
+            
+            if (action === 'play') {
+                const title = params.get('title');
+                const artist = params.get('artist');
+                const path = params.get('path');
+                
+                if (path) {
+                    // 直接通过路径播放
+                    await this.playByPath(decodeURIComponent(path));
+                } else if (title) {
+                    // 通过标题和艺术家搜索播放
+                    await this.playByTitleAndArtist(
+                        decodeURIComponent(title), 
+                        artist ? decodeURIComponent(artist) : ''
+                    );
+                } else {
+                    Utils.showNotification('协议URL格式错误：缺少必要参数', 'error');
+                }
+            } else {
+                Utils.showNotification('不支持的协议操作：' + action, 'error');
+            }
+        } catch (error) {
+            console.error('处理协议URL失败:', error);
+            Utils.showNotification('处理协议URL失败：' + error.message, 'error');
+        }
+    }
+    
+    /**
+     * 通过文件路径播放音乐
+     */
+    async playByPath(filePath) {
+        if (!window.player || !window.musicLibrary) {
+            Utils.showNotification('播放器未准备就绪', 'error');
+            return;
+        }
+        
+        const song = window.musicLibrary.getSongByPath(filePath);
+        if (song) {
+            await window.player.playByPath(filePath);
+            Utils.showNotification(`正在播放：${song.title}`, 'success');
+        } else {
+            Utils.showNotification('找不到指定的音乐文件', 'error');
+        }
+    }
+    
+    /**
+     * 通过标题和艺术家搜索并播放音乐
+     */
+    async playByTitleAndArtist(title, artist = '') {
+        if (!window.player || !window.musicLibrary) {
+            Utils.showNotification('播放器未准备就绪', 'error');
+            return;
+        }
+        
+        // 在本地音乐库中搜索
+        const searchQuery = artist ? `${title} ${artist}` : title;
+        const results = window.musicLibrary.search(searchQuery);
+        
+        if (results && results.length > 0) {
+            // 找到匹配的歌曲，播放第一个结果
+            const song = results[0];
+            await window.player.playByPath(song.path);
+            Utils.showNotification(`正在播放：${song.title} - ${song.artist}`, 'success');
+        } else {
+            // 本地没找到，提示用户
+            const message = artist 
+                ? `未找到歌曲："${title}" - ${artist}` 
+                : `未找到歌曲："${title}"`;
+            Utils.showNotification(message, 'warning');
+        }
     }
     
     setupErrorHandlers() {
