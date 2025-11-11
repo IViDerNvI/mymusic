@@ -156,6 +156,18 @@ class MyMusicApp {
                     const decodedTitle = decodeURIComponent(title);
                     const decodedArtist = artist ? decodeURIComponent(artist) : '';
                     console.log('通过标题和艺术家播放:', { decodedTitle, decodedArtist });
+                    
+                    // 检查音乐库状态
+                    if (window.musicLibrary && window.musicLibrary.songs) {
+                        console.log('音乐库状态:', {
+                            总歌曲数: window.musicLibrary.songs.length,
+                            示例歌曲: window.musicLibrary.songs.slice(0, 3).map(s => ({
+                                title: s.title,
+                                artist: s.artist
+                            }))
+                        });
+                    }
+                    
                     await this.playByTitleAndArtist(decodedTitle, decodedArtist);
                 } else {
                     console.error('缺少必要参数');
@@ -198,21 +210,102 @@ class MyMusicApp {
             return;
         }
         
-        // 在本地音乐库中搜索
-        const searchQuery = artist ? `${title} ${artist}` : title;
-        const results = window.musicLibrary.search(searchQuery);
+        console.log('搜索歌曲:', { title, artist });
+        
+        let results = [];
+        
+        // 策略1: 如果有艺术家信息，先尝试精确匹配
+        if (artist) {
+            console.log('策略1: 精确匹配 (标题 + 艺术家)');
+            const exactQuery = `${title} ${artist}`;
+            results = window.musicLibrary.searchSongs(exactQuery);
+            console.log('精确搜索结果:', results.length);
+        }
+        
+        // 策略2: 如果没有结果，尝试只用标题搜索
+        if (results.length === 0) {
+            console.log('策略2: 仅标题搜索');
+            results = window.musicLibrary.searchSongs(title);
+            console.log('标题搜索结果:', results.length);
+        }
+        
+        // 策略3: 如果还没有结果，尝试分别搜索艺术家
+        if (results.length === 0 && artist) {
+            console.log('策略3: 仅艺术家搜索');
+            results = window.musicLibrary.searchSongs(artist);
+            console.log('艺术家搜索结果:', results.length);
+        }
+        
+        // 策略4: 如果有多个结果且有艺术家信息，过滤匹配艺术家的结果
+        if (results.length > 1 && artist) {
+            console.log('策略4: 艺术家过滤');
+            const artistLower = artist.toLowerCase();
+            const artistNormalized = window.musicLibrary.normalizeString(artist);
+            
+            const artistFiltered = results.filter(song => {
+                if (!song.artist) return false;
+                const songArtistLower = song.artist.toLowerCase();
+                const songArtistNormalized = window.musicLibrary.normalizeString(song.artist);
+                
+                return songArtistLower.includes(artistLower) || 
+                       songArtistNormalized.includes(artistNormalized) ||
+                       artistLower.includes(songArtistLower) ||
+                       artistNormalized.includes(songArtistNormalized);
+            });
+            
+            if (artistFiltered.length > 0) {
+                results = artistFiltered;
+                console.log('艺术家过滤后结果:', results.length);
+            }
+        }
+        
+        // 策略5: 如果有多个结果，尝试标题的更精确匹配
+        if (results.length > 1) {
+            console.log('策略5: 标题精确过滤');
+            const titleLower = title.toLowerCase();
+            const titleNormalized = window.musicLibrary.normalizeString(title);
+            
+            const titleFiltered = results.filter(song => {
+                if (!song.title) return false;
+                const songTitleLower = song.title.toLowerCase();
+                const songTitleNormalized = window.musicLibrary.normalizeString(song.title);
+                
+                return songTitleLower === titleLower || 
+                       songTitleNormalized === titleNormalized ||
+                       songTitleLower.includes(titleLower) ||
+                       songTitleNormalized.includes(titleNormalized);
+            });
+            
+            if (titleFiltered.length > 0) {
+                results = titleFiltered;
+                console.log('标题精确过滤后结果:', results.length);
+            }
+        }
         
         if (results && results.length > 0) {
             // 找到匹配的歌曲，播放第一个结果
             const song = results[0];
-            await window.player.playByPath(song.path);
-            Utils.showNotification(`正在播放：${song.title} - ${song.artist}`, 'success');
+            console.log('将播放歌曲:', song);
+            
+            try {
+                await window.player.playByPath(song.path);
+                Utils.showNotification(`正在播放：${song.title} - ${song.artist}`, 'success');
+            } catch (error) {
+                console.error('播放歌曲失败:', error);
+                Utils.showNotification(`播放失败：${error.message}`, 'error');
+            }
         } else {
             // 本地没找到，提示用户
+            console.log('未找到匹配歌曲');
             const message = artist 
                 ? `未找到歌曲："${title}" - ${artist}` 
                 : `未找到歌曲："${title}"`;
             Utils.showNotification(message, 'warning');
+            
+            // 显示可能的建议
+            if (window.musicLibrary.songs.length > 0) {
+                console.log('音乐库中的歌曲示例:', window.musicLibrary.songs.slice(0, 5).map(s => ({ title: s.title, artist: s.artist })));
+            }
         }
     }
     

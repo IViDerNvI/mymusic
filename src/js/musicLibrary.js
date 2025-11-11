@@ -524,7 +524,7 @@ class MusicLibrary {
         });
     }
     
-    // 搜索功能
+    // 搜索功能 (用于UI显示)
     search(query) {
         if (!query.trim()) {
             this.updateLibraryView();
@@ -533,14 +533,93 @@ class MusicLibrary {
         
         storage.addToSearchHistory(query);
         
+        const results = this.searchSongs(query);
+        this.displaySearchResults(results, query);
+    }
+    
+    // 搜索歌曲 (返回结果数组，用于协议处理)
+    searchSongs(query) {
+        if (!query || !query.trim()) {
+            return [];
+        }
+        
+        console.log('搜索查询:', query);
+        console.log('音乐库歌曲总数:', this.songs.length);
+        
+        const queryLower = query.toLowerCase().trim();
+        const queryNormalized = this.normalizeString(query);
+        
         const results = this.songs.filter(song => {
-            return Utils.SearchUtils.fuzzyMatch(query, song.title) ||
-                   Utils.SearchUtils.fuzzyMatch(query, song.artist) ||
-                   Utils.SearchUtils.fuzzyMatch(query, song.album) ||
-                   Utils.SearchUtils.fuzzyMatch(query, song.genre);
+            const songTitle = song.title || '';
+            const songArtist = song.artist || '';
+            const songAlbum = song.album || '';
+            const songGenre = song.genre || '';
+            
+            // 记录详细匹配过程
+            const matches = {
+                titleExact: songTitle.toLowerCase() === queryLower,
+                titleContains: songTitle.toLowerCase().includes(queryLower),
+                titleNormalized: this.normalizeString(songTitle).includes(queryNormalized),
+                artistContains: songArtist.toLowerCase().includes(queryLower),
+                artistNormalized: this.normalizeString(songArtist).includes(queryNormalized),
+                albumContains: songAlbum.toLowerCase().includes(queryLower),
+                fuzzyTitle: Utils.SearchUtils.fuzzyMatch(query, songTitle),
+                fuzzyArtist: Utils.SearchUtils.fuzzyMatch(query, songArtist),
+                fuzzyAlbum: Utils.SearchUtils.fuzzyMatch(query, songAlbum),
+                fuzzyGenre: Utils.SearchUtils.fuzzyMatch(query, songGenre)
+            };
+            
+            const isMatch = Object.values(matches).some(match => match);
+            
+            if (isMatch) {
+                console.log('匹配歌曲:', {
+                    title: songTitle,
+                    artist: songArtist,
+                    matches: matches
+                });
+            }
+            
+            return isMatch;
+        }).sort((a, b) => {
+            // 按匹配度排序：完全匹配 > 标题匹配 > 艺术家匹配 > 其他匹配
+            const aTitle = (a.title || '').toLowerCase();
+            const bTitle = (b.title || '').toLowerCase();
+            const aArtist = (a.artist || '').toLowerCase();
+            const bArtist = (b.artist || '').toLowerCase();
+            
+            // 完全匹配优先
+            if (aTitle === queryLower && bTitle !== queryLower) return -1;
+            if (bTitle === queryLower && aTitle !== queryLower) return 1;
+            
+            // 标题包含匹配优先
+            const aTitleMatch = aTitle.includes(queryLower);
+            const bTitleMatch = bTitle.includes(queryLower);
+            if (aTitleMatch && !bTitleMatch) return -1;
+            if (bTitleMatch && !aTitleMatch) return 1;
+            
+            // 艺术家匹配
+            const aArtistMatch = aArtist.includes(queryLower);
+            const bArtistMatch = bArtist.includes(queryLower);
+            if (aArtistMatch && !bArtistMatch) return -1;
+            if (bArtistMatch && !aArtistMatch) return 1;
+            
+            return 0;
         });
         
-        this.displaySearchResults(results, query);
+        console.log('搜索结果数量:', results.length);
+        return results;
+    }
+    
+    // 字符串标准化，用于更好的匹配（处理日文、中文等）
+    normalizeString(str) {
+        if (!str) return '';
+        return str.toLowerCase()
+                  .replace(/\s+/g, '') // 移除空格
+                  .replace(/[！！]/g, '!') // 标准化感叹号
+                  .replace(/[？？]/g, '?') // 标准化问号
+                  .replace(/[（）]/g, '') // 移除全角括号
+                  .replace(/[()]/g, '') // 移除半角括号
+                  .trim();
     }
     
     displaySearchResults(results, query) {
